@@ -550,8 +550,8 @@ c
          if(iocean .eq. 1) then
             call randoc
          else
-            call get_fields
-c            call random   
+            !call get_fields
+            call random   
          endif
          !Call dns_vis even when doing LES since vis_m needs to be initialized with something
          call dns_vis
@@ -5436,8 +5436,8 @@ c
 
 c
 c        wtsfc is defined in upward direction
-         wtsfc(1) = 0.0 !-32.0/Cpa/rhoa  !Not Advective Flux in DNS
-         wtsfc(2) = 0.0
+         wtsfc(1) = 0.5 !-32.0/Cpa/rhoa  !Not Advective Flux in DNS
+         wtsfc(2) = 0.1
 c
          qstar(1)=wtsfc(1)
          qstar(2)=wtsfc(2)
@@ -5485,8 +5485,8 @@ c
             z(iz) = dz*float(iz) + zwstrt
          enddo
       else
-        !call vgrid(zw1,zi,zl,nnz,z(0),l_root,l_debug)
-        call vgrid_channel(zw1,zi,zl,nnz,z(0),l_root,l_debug)
+        call vgrid(zw1,zi,zl,nnz,z(0),l_root,l_debug)
+        !call vgrid_channel(zw1,zi,zl,nnz,z(0),l_root,l_debug)
       endif
 c
       call get_dz
@@ -5876,34 +5876,29 @@ c           u(ix,iy,iz) = ug(iz) - ugal
          if(z(iz) .le. z_lower) then
            do iy=iys,iye
            do ix=1,nnx
-              !t(ix,iy,1,iz) = t_lower
+              t(ix,iy,1,iz) = t_lower
               !t(ix,iy,1,iz) = tsfcc(1) - 5.0 !Brian 5/28/14
-              t(ix,iy,1,iz) = tsfcc(1) !Brian 5/28/14
-              t(ix,iy,2,iz) = tsfcc(2) !Brian 5/28/14 nscl2 field initialize
 
            enddo
            enddo
          elseif(z(iz) .ge. z_upper) then
            do iy=iys,iye
            do ix=1,nnx
-              !t(ix,iy,1,iz) = t_upper + (zz(iz+1) - z_upper)*dtdzf(1)
-              !t(ix,iy,1,iz) = tsfcc(1) - 5.0 !Brian 5/28/14
-              t(ix,iy,1,iz) = tsfcc(1) !Brian 5/28/14
-              t(ix,iy,2,iz) = tsfcc(2) !Brian 5/28/14 nscl2 field initialize
+              t(ix,iy,1,iz) = t_upper + (zz(iz+1) - z_upper)*dtdzf(1)
+              !t(ix,iy,1,iz) = tsfcc(1) - 5.0
            enddo
            enddo
          else
            do iy=iys,iye
            do ix=1,nnx
-              !t(ix,iy,1,iz) = t_lower + slope*(zz(iz+1) - z_lower)
-              !t(ix,iy,1,iz) = tsfcc(1) - 5.0 !Brian 5/28/14
-              t(ix,iy,1,iz) = tsfcc(1) !Brian 5/28/14
-              t(ix,iy,2,iz) = tsfcc(2) !Brian 5/28/14 nscl2 field initialize
+              t(ix,iy,1,iz) = t_lower + slope*(zz(iz+1) - z_lower)
+              !t(ix,iy,1,iz) = tsfcc(1) - 5.0 
            enddo
            enddo
          endif
          do iy=iys,iye
          do ix=1,nnx
+            t(ix,iy,2,iz) = 0.  !For now just set the initial humidity field to zero
             w(ix,iy,iz)   = 0.
             r1(ix,iy,iz)  = 0.
             r2(ix,iy,iz)  = 0.
