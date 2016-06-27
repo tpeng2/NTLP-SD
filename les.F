@@ -2873,7 +2873,7 @@ c
 
       !Use Prantdl number for thermal diffusivity:
       vis_s(1:nnx,iys:iye,1,izs-1:ize+1) = nuf/Pra   ! alpha=nu/Prandtl   
-      vis_s(1:nnx,iys:iye,2,izs-1:ize+1) = nuf/Sc    !Dv =nu/Sc
+!      vis_s(1:nnx,iys:iye,2,izs-1:ize+1) = nuf/Sc    !Dv =nu/Sc
       r5 = 0.0
       e = 0.0
 
@@ -5437,7 +5437,7 @@ c
 c
 c        wtsfc is defined in upward direction
          wtsfc(1) = 0.5 !-32.0/Cpa/rhoa  !Not Advective Flux in DNS
-         wtsfc(2) = 0.1
+         wtsfc(2) = 0.5
 c
          qstar(1)=wtsfc(1)
          qstar(2)=wtsfc(2)
@@ -5448,7 +5448,7 @@ c
          dtjump  = 0.0
          divgls  = 0.0
          zo      = 0.1
-         ugcont  = 0.01 
+         ugcont  = 10.0 
          vgcont  = 0.0
 
   
@@ -5561,9 +5561,9 @@ c        utau  = vk*(ufree)/zody
       vwsfc = -utau*utau
 c ------- make sure tsfcc is gt than t00 for both isfc=0 or 1
 c     tsfcc(1) = t00+qstar(1)/utau*zody*vk74in
-c      tsfcc(1) = 300    !Brian 6/3/14
-      tsfcc(1) = (Ttop(1)+Tbot(1))/2.0 !Brian 6/3/14
-      tsfcc(2) = (Ttop(2)+Tbot(2))/2.0 !Brian 6/3/14
+      tsfcc(1) = 300.0    !Brian 6/3/14
+!      tsfcc(1) = (Ttop(1)+Tbot(1))/2.0 !Brian 6/3/14
+!      tsfcc(2) = (Ttop(2)+Tbot(2))/2.0 !Brian 6/3/14
 c
       if(l_root) then
          write(6,80)
@@ -5898,13 +5898,13 @@ c           u(ix,iy,iz) = ug(iz) - ugal
          endif
          do iy=iys,iye
          do ix=1,nnx
-            t(ix,iy,2,iz) = 0.  !For now just set the initial humidity field to zero
+            !t(ix,iy,2,iz) = 0.  !For now just set the initial humidity field to zero
             w(ix,iy,iz)   = 0.
             r1(ix,iy,iz)  = 0.
             r2(ix,iy,iz)  = 0.
             r3(ix,iy,iz)  = 0.
             r4(ix,iy,1,iz)= 0.
-            r4(ix,iy,2,iz)= 0.
+            !r4(ix,iy,2,iz)= 0.
             r5(ix,iy,iz)  = 0.
          enddo 
          enddo 
@@ -11322,8 +11322,6 @@ c      brc_r = 4*(nnz+2)*3*2 !Brian 7/14/14
     
 
       m_s = Sal/1000.0*4.0/3.0*pi*radius_mass**3*rhow
-
-
 
 
       if (myid==0) write(*,*) 'Init Particle radius = ',radius_init  !Brian 7/14/14
