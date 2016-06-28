@@ -2,10 +2,10 @@
 !Time step information
 &step_params
 iti=0
-itmax=10000
+itmax=5000
 imean=100
 ihst=10
-itape=5000
+itape=100
 itstr=1
 it_his=1
 it_viz=1
@@ -15,7 +15,7 @@ itn = 0  !Index for "u.le.cou001" files
 
 !Flags for various features
 &flags
-noalis=1, ismlt=0, ifree=0, isfc=0, iradup=1, iupwnd=1
+noalis=1, ismlt=0, ifree=0, isfc=1, iradup=1, iupwnd=1
 ibuoy=1, ifilt=0, itcut=1, isubs=0, ibrcl=0, iocean=0
 method=3, idebug=1, iz_space=1, ivis0=1, ifix_dt=0, new_vis=-1
 iDNS = 0
@@ -32,6 +32,9 @@ ncpu_s=8
 Uo = 1.59  !Used when top and bottom are equal and opposite in DNS
 Ttop(1) = 300.15, 95.0  !Currently this should be (temperature, relative humidity) (used in DNS)
 Tbot(1) = 300.15, 100.0  !Currently this should be (temperature, relative humidity) (used in DNS)
+
+qstar = 0.5, 0.5  !Surface fluxes of (temperature, humidity) (used for LES and DNS)
+tsfcc = 305.15, 100.0    !Surface conditions of (temp, humidity) (used for LES) -- make sure tsfcc is gt than t00 for both isfc=0 or 1
 
 zi = 1000.0  !This has to do with grid stretching; make equal to zl for Couette/channel
 zl = 2048.0

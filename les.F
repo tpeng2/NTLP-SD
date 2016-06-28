@@ -20,7 +20,7 @@ c
      + maxnz2=maxnz+2,maxnx2=maxnx+2,maxny2=maxny+2
 
       !Boundary conditions and other parameters
-      real :: Uo, Ttop(nscl), Tbot(nscl)
+      real :: Uo, Ttop(nscl), Tbot(nscl),qstar(nscl),tsfcc(nscl)
       real :: grav,t00,fcor,zi,zl,xl,yl,zw1
 c     
 c     ------------ leave following definitions as is
@@ -164,8 +164,8 @@ c     ----------------------------------------------------------------------
      +     cdbtm, dtdzf(nscl), dtjump, ugal, divgls,
      +     z1, utausv, dx, dy, dz, dt, 
      +     fnxy, dzdz, dsl, c23, dtgama, dtzeta, xkmax,
-     +     time, zody, zody74, tsfcc(nscl),
-     +     utau, qstar(nscl), wtsfc(nscl),
+     +     time, zody, zody74,
+     +     utau, wtsfc(nscl),
      +     uwsfc, vwsfc, amonin,
      +     zol, hol, smal_e, sml_eg
       end type con_d
@@ -177,8 +177,8 @@ c     ----------------------------------------------------------------------
      +     cdbtm, dtdzf(:), dtjump, ugal, divgls,
      +     z1, utausv, dx, dy, dz, dt,
      +     fnxy, dzdz, dsl, c23, dtgama, dtzeta, xkmax, 
-     +     time, zody, zody74, tsfcc(:),
-     +     utau, qstar(:), wtsfc(:), 
+     +     time, zody, zody74,
+     +     utau, wtsfc(:), 
      +     uwsfc, vwsfc, amonin,
      +     zol, hol, smal_e, sml_eg
       contains
@@ -219,9 +219,7 @@ c
       time   => c_c%time
       zody   => c_c%zody
       zody74 => c_c%zody74
-      tsfcc  => c_c%tsfcc
       utau   => c_c%utau
-      qstar  => c_c%qstar
       wtsfc  => c_c%wtsfc
       uwsfc  => c_c%uwsfc
       vwsfc  => c_c%vwsfc
@@ -535,7 +533,7 @@ c
       if (iti.eq.0)  then
          igrdr = 2
          case = case_inp
-         call init(Cpa,rhoa,Mw,Ru)
+         call init
          call setup(it)
 
          if (ispray==1) then
@@ -3335,8 +3333,8 @@ c
 
 !NOTE: sign convention is that wtsfc is flux upwards INTO domain (not just in vertical direction)
 ! Set the scalar boundary condition based on isfc
-c            isfc = 0, specified surface heat flux (through wtsfc)
-c                 = 1, specified surface temperature (tsfcc)
+c            isfc = 0, specified surface heat flux (through qstar)
+c                 = 1, specified surface temperature (Tbot)
 
       do iscl=1,nscl
          do iy=iys,iye
@@ -3393,8 +3391,8 @@ c
       enddo
 
 ! Set the scalar boundary condition based on isfc
-c            isfc = 0, specified surface heat flux (through wtsfc)
-c                 = 1, specified surface temperature (tsfcc)
+c            isfc = 0, specified surface heat flux (through qstar)
+c                 = 1, specified surface temperature (Ttop)
 
 !NOTE: sign convention is that wtsfc is flux upwards INTO domain (not just in vertical direction)
 
@@ -5367,14 +5365,14 @@ c
 c
       return
       end
-      subroutine init(Cpa,rhoa,Mw,Ru)
+      subroutine init
 c
       use pars
       use fields
       use con_data
       use con_stats
+      use particles
 c
-      real :: Cpa,rhoa,Mw,Ru
       real :: RHT,RHB
 
       pi   = 4.0*atan(1.0)
@@ -5420,6 +5418,9 @@ c
          batag   = bfac*grav/t00
          fcor_h  = 0.0
 
+         !!!If doing DNS, BCs are set somewhat differently than when doing LES
+         if (iDNS .eq. 1) then
+
          !Get BCs of temperature in Celsius for use in specific expressions
          topC=(Ttop(1)-273.15)
          botC=(Tbot(1)-273.15)  
@@ -5434,13 +5435,20 @@ c
          Tbot(2) =  RHB*Mw/Ru/Tbot(1)*610.94*
      +               EXP(17.6257*botC/(botC+243.04))/rhoa
 
+         wtsfc(1) = qstar(1)
+         wtsfc(2) = qstar(2)
+
+         else !(doing LES)
 c
-c        wtsfc is defined in upward direction
-         wtsfc(1) = 0.5 !-32.0/Cpa/rhoa  !Not Advective Flux in DNS
-         wtsfc(2) = 0.5
+         !qstar specified in input file for isfc = 0
+        
+         wtsfc(1) = qstar(1)
+         wtsfc(2) = qstar(2)
+
+         !tsfcc specified in input file for isfc = 1
+
+         end if
 c
-         qstar(1)=wtsfc(1)
-         qstar(2)=wtsfc(2)
 c
          dtdzf(1)=0.003
          dtdzf(2)=0.003
@@ -5559,11 +5567,6 @@ c        utau  = vk*(ufree)/zody
       zol   = abs(z1)/amonin
       uwsfc = -utau*utau
       vwsfc = -utau*utau
-c ------- make sure tsfcc is gt than t00 for both isfc=0 or 1
-c     tsfcc(1) = t00+qstar(1)/utau*zody*vk74in
-      tsfcc(1) = 300.0    !Brian 6/3/14
-!      tsfcc(1) = (Ttop(1)+Tbot(1))/2.0 !Brian 6/3/14
-!      tsfcc(2) = (Ttop(2)+Tbot(2))/2.0 !Brian 6/3/14
 c
       if(l_root) then
          write(6,80)
@@ -11981,6 +11984,7 @@ c      brc_r = 4*(nnz+2)*3*2 !Brian 7/14/14
      +                       itstr,it_his,it_viz,i_viz,itn
 
       namelist /grid_params/ ncpu_s, Uo, Ttop, Tbot,
+     +         qstar, tsfcc,
      +         zi, zl, xl, yl, zw1
 
       namelist /path_names/ path_seed,path_part,path_res,
