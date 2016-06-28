@@ -2,10 +2,10 @@
 !Time step information
 &step_params
 iti=0
-itmax=5000
+itmax=500
 imean=100
 ihst=10
-itape=100
+itape=5000
 itstr=1
 it_his=1
 it_viz=1

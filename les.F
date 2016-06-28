@@ -5043,6 +5043,32 @@ c
      +                 tsfcc(1),amonin,utau,it
          go to 9999
       endif
+
+!Now that temperature and momentum have been done, apply BCs on remaining scalars:
+
+      do iscl=2,nscl
+
+      if (ibuoy.eq.0 .or. qstar(1) .eq. 0.) then
+          thstar(iscl) = 0.0
+          t10xy(iscl)  = 0.0
+          tsfcc(iscl)  = t1xy(iscl)
+      else
+         dnom = (zody-psis)*vk74in
+         if(isfc .eq. 0) then
+            thstar(iscl) = -qstar(iscl)/utau
+            tsfcc(iscl)  = t1xy(iscl)-thstar(iscl)*dnom
+            t10xy(iscl)  = thstar(iscl)*dnom
+         else
+            thstar(iscl) = (t1xy(iscl) - tsfcc(iscl))/dnom
+            t10xy(iscl)  = thstar(iscl)*dnom
+            qstar(iscl)  = -utau*thstar(iscl)
+         endif
+         amonin = -utau**3/(batagk*qstar(iscl))
+         zeta   = z1/amonin
+      endif
+
+      enddo
+
 c ---------- examples of two other scalars
 c
 c     c
@@ -5074,7 +5100,9 @@ c
       utau2     = utau*utau
       au13m     = -utau2*cos(thta)
       au23m     = -utau2*sin(thta)*sign(1.,v1xy)
-      aut3m(1)  =  qstar(1)
+      do iscl = 1,nscl
+      aut3m(iscl)  =  qstar(iscl)
+      end do
 c
       return
 c
@@ -5446,6 +5474,14 @@ c
          wtsfc(2) = qstar(2)
 
          !tsfcc specified in input file for isfc = 1
+
+         !Assuming tsfcc(2) is giving RH:
+
+         botC=(tsfcc(1)-273.15)  
+         RHB = tsfcc(2)/100.0
+
+         tsfcc(2) =  RHB*Mw/Ru/tsfcc(1)*610.94*
+     +               EXP(17.6257*botC/(botC+243.04))/rhoa
 
          end if
 c
