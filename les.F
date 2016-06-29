@@ -4,7 +4,7 @@ c     ----------------------------------------------------------------------
       integer :: iti,itmax,imean,ihst,itape
       integer :: itstr,it_his,it_viz,i_viz
 
-      integer :: noalis,ismlt,ifree,isfc,iradup,
+      integer :: noalis,ismlt,ifree,iradup,
      +     iupwnd,ibuoy,ifilt,itcut,isubs,ibrcl,iocean,method,
      +     idebug,iz_space,ivis0,ifix_dt,new_vis,iDNS,ispray,
      +     icouple,iTcouple,iHcouple,ievap
@@ -22,6 +22,7 @@ c
       !Boundary conditions and other parameters
       real :: Uo, Ttop(nscl), Tbot(nscl),qstar(nscl),tsfcc(nscl)
       real :: grav,t00,fcor,zi,zl,xl,yl,zw1
+      integer :: isfc(nscl)
 c     
 c     ------------ leave following definitions as is
 c     
@@ -2608,7 +2609,7 @@ c
 
 
 !      Aside - get each wtsfc value:
-       if (iz == 1 .and. isfc == 1) then
+       if (iz == 1 .and. isfc(iscl) == 1) then
           call mpi_sum_xy(sfc_flx,myid,iss,ise,1)
           wtsfc(iscl) = sfc_flx*fnxy 
        end if
@@ -3339,11 +3340,11 @@ c                 = 1, specified surface temperature (Tbot)
       do iscl=1,nscl
          do iy=iys,iye
          do ix=1,nnx
-            if (isfc==1) then
+            if (isfc(iscl)==1) then
             t(ix,iy,iscl,izm1) = 2.0*Tbot(iscl) - t(ix,iy,iscl,iz) 
             end if
 
-            if (isfc==0) then 
+            if (isfc(iscl)==0) then 
             flux = dzu(0)*wtsfc(iscl)/vis_s(ix,iy,iscl,izm1)
             t(ix,iy,iscl,izm1) = t(ix,iy,iscl,iz)     
      +       + flux  
@@ -3399,10 +3400,10 @@ c                 = 1, specified surface temperature (Ttop)
       do iscl=1,nscl
          do iy=iys,iye
          do ix=1,nnx
-            if (isfc==1) then
+            if (isfc(iscl)==1) then
             t(ix,iy,iscl,izp1) = 2.0*Ttop(iscl)-t(ix,iy,iscl,iz) 
             end if
-            if (isfc==0) then 
+            if (isfc(iscl)==0) then 
             flux = dzu(izp1)*wtsfc(iscl)/vis_s(ix,iy,iscl,izp1)
             t(ix,iy,iscl,izp1) = t(ix,iy,iscl,iz)      
      +       - flux 
@@ -4960,7 +4961,7 @@ c ---------- limits for zeta
 c
       zeta_mn = zeta_min
       zeta_mx = zeta_max
-      if(isfc .eq. 0) then
+      if(isfc(1) .eq. 0) then
          f_con = z1*batag*vk*qstar(1)/((windm*vk)**3)
       else
          d_theta = vk74in*(tsfcc(1) - t1xy(1))
@@ -4977,7 +4978,7 @@ c
              call fzol(zeta_a,phim,phis,psim,psis)
          endif
          u_fac = (zody - psim)
-         if(isfc .eq. 0) then
+         if(isfc(1) .eq. 0) then
             f_new =  zeta_a + f_con*u_fac**3
          else
             t_fac = 1.0/(zody - psis)
@@ -5009,7 +5010,7 @@ c
       else
          utau = windm*vk/(zody-psim)
          dnom = (zody-psis)*vk74in
-         if(isfc .eq. 0) then
+         if(isfc(1) .eq. 0) then
             thstar(1) = -qstar(1)/utau
             tsfcc(1)  = t1xy(1)-thstar(1)*dnom
             t10xy(1)  = thstar(1)*dnom
@@ -5054,7 +5055,7 @@ c
           tsfcc(iscl)  = t1xy(iscl)
       else
          dnom = (zody-psis)*vk74in
-         if(isfc .eq. 0) then
+         if(isfc(iscl) .eq. 0) then
             thstar(iscl) = -qstar(iscl)/utau
             tsfcc(iscl)  = t1xy(iscl)-thstar(iscl)*dnom
             t10xy(iscl)  = thstar(iscl)*dnom
@@ -5170,7 +5171,7 @@ c
 c
 c ---- check for temperature boundary condition
 c
-      if(isfc .eq. 0 ) then
+      if(isfc(iscl) .eq. 0 ) then
          tsfcc(1)=t1xy(1)-t10xy(1)
       endif
 c     vsfc=sqrt(u1xy*u1xy+v1xy*v1xy)
@@ -5213,7 +5214,7 @@ c
       udrift = windm + stokes(1) - stokess + utau*(zody-psim)*vkin
       vdrift = 0.0
       dnom      = (zody-psis)*vk74in
-      if (isfc.eq.1) then
+      if (isfc(iscl).eq.1) then
          thstar(1) = (t1xy(1) - tsfcc(1))/dnom
          t10xy(1)  = thstar(1)*dnom
          qstar(1)  = - utau*thstar(1)
@@ -5482,6 +5483,9 @@ c
 
          tsfcc(2) =  RHB*Mw/Ru/tsfcc(1)*610.94*
      +               EXP(17.6257*botC/(botC+243.04))/rhoa
+
+         !FOR TESTING PURPOSES:
+         tsfcc(2) = 1.0
 
          end if
 c
@@ -7914,6 +7918,10 @@ c               and data structures
 c
       call fill_cc
       call fill_cs
+
+      if (myid==0) write(6,5001) isize
+ 5001 format(' size of stats array = ',i8)
+
 c
 c
 c ---------------- debug for arrays
@@ -12016,6 +12024,7 @@ c      brc_r = 4*(nnz+2)*3*2 !Brian 7/14/14
       implicit none
 
       character(48) :: label
+      character(180) :: params_dir
       namelist /step_params/ iti,itmax,imean,ihst,itape,
      +                       itstr,it_his,it_viz,i_viz,itn
 
@@ -12041,7 +12050,9 @@ c      brc_r = 4*(nnz+2)*3*2 !Brian 7/14/14
 
 
       !params.in contains namelists to read
-      open(12, file="../params.in", status="old")
+      !open(12, file="./params.in", status="old")
+      call get_command_argument(1,params_dir)
+      open(12,file=params_dir,status="old")
 
       read(12,nml=step_params)
       if (myid==0) print step_params
