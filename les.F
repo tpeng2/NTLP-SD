@@ -4,7 +4,7 @@ c     ----------------------------------------------------------------------
       integer :: iti,itmax,imean,ihst,itape
       integer :: itstr,it_his,it_viz,i_viz
 
-      integer :: noalis,ismlt,ifree,iradup,
+      integer :: ismlt,ifree,iradup,
      +     iupwnd,ibuoy,ifilt,itcut,isubs,ibrcl,iocean,method,
      +     idebug,iz_space,ivis0,ifix_dt,new_vis,iDNS,ispray,
      +     icouple,iTcouple,iHcouple,ievap
@@ -15,7 +15,7 @@ c
       integer, parameter :: j_recl=4, k8=8
 
       integer, parameter :: nscl = 2, nvar = (4+nscl)
-      integer, parameter :: maxnx=128,maxny=128,maxnz=128
+      integer, parameter :: maxnx=256,maxny=256,maxnz=256
       integer, parameter :: maxnz1=maxnz+1,
      + maxnz2=maxnz+2,maxnx2=maxnx+2,maxny2=maxny+2
 
@@ -121,6 +121,7 @@ c     ----------------------------------------------------------------------
       integer :: numpart,tnumpart,ngidx
       integer :: iseed
       real :: Rep_avg,part_grav
+      real :: vp_init(3),Tp_init,qf_init
 
       real :: radius_init,radius_mass,rhow,nuf 
       real :: CpaCpp,Cpa,Cpp,Pra,Sc,Mw,Ru,rhoa
@@ -1109,13 +1110,13 @@ c
 c     if(ifilt.eq.1)call filter
       if(l_root) then
          write(6,1) nnx,nny,nnz,ismlt,ifilt,iti,itmax,
-     +             iupwnd,ibuoy,noalis,itcut,
+     +             iupwnd,ibuoy,itcut,
      +             dt,zo,tsfcc(1),isubs,ibrcl,
      +             method, iocean, ivis
       endif
       if(l_debug) then
          write(nprt,1) nnx,nny,nnz,ismlt,ifilt,iti,itmax,
-     +             iupwnd,ibuoy,noalis,itcut,
+     +             iupwnd,ibuoy,itcut,
      +             dt,zo,tsfcc(1),isubs,ibrcl,
      +             method, iocean, ivis
       endif
@@ -11331,8 +11332,8 @@ c      brc_r = 4*(nnz+2)*3*2 !Brian 7/14/14
       xv = ran2(iseed)*(xmax-xmin) + xmin
       yv = ran2(iseed)*(ymax-ymin) + ymin
       zv = ran2(iseed)*(zl-2.0*delta_vis) + delta_vis 
-      call create_particle((/xv,yv,zv/),(/0.01,0.0,0.0/),
-     +         Tbot(1),Ttop(2),idx) 
+      call create_particle((/xv,yv,zv/),vp_init,
+     +         Tp_init,qf_init,idx) 
       end do
 
       partTsrc = 0.0
@@ -11358,6 +11359,7 @@ c      brc_r = 4*(nnz+2)*3*2 !Brian 7/14/14
       real :: pi
       integer(kind=MPI_ADDRESS_KIND) :: extent,lb
       integer(kind=MPI_ADDRESS_KIND) :: extent2,lb2,displs(3)
+      integer :: num_reals
 
       !First set up the neighbors for the interpolation stage:
       call assign_nbrs
@@ -11385,8 +11387,10 @@ c      brc_r = 4*(nnz+2)*3*2 !Brian 7/14/14
 
       !Set up MPI datatypes for sending particle information
       !MUST UPDATE IF THINGS ARE ADDED/REMOVED FROM PARTICLE STRUCTURE
+
+      num_reals = 5*3+8
       
-      blcts(1:3) = (/2,5*3+8,2/) !3*5+8 reals (eg. Tp,Tprhs,Tf)
+      blcts(1:3) = (/2,num_reals,2/)
       displs(1) = 0
       types(1) = mpi_integer
       call mpi_type_get_extent(mpi_integer,lb,extent,ierr)
@@ -11395,8 +11399,8 @@ c      brc_r = 4*(nnz+2)*3*2 !Brian 7/14/14
       displs(2) = extent*2
       types(2) = mpi_real8
       call mpi_type_get_extent(mpi_real8,lb,extent,ierr)
-      !Displace (6*3)*size of mpi_real8 (5 3-vectors plus Tp,Tprhs,Tf...)
-      displs(3) = displs(2) + extent*(5*3+8)
+      !Displace num_reals*size of mpi_real8
+      displs(3) = displs(2) + extent*num_reals
       types(3) = mpi_integer8
 
       !Now define the type:
@@ -12036,7 +12040,7 @@ c      brc_r = 4*(nnz+2)*3*2 !Brian 7/14/14
      +         path_sav,path_his,path_viz_xy,path_viz_xz,
      +         path_viz_yz,path_stuf,path_ran
 
-      namelist /flags/ noalis,ismlt,ifree,isfc,iradup,
+      namelist /flags/ ismlt,ifree,isfc,iradup,
      +         iupwnd,ibuoy,ifilt,itcut,isubs,ibrcl,iocean,
      +         method,idebug,iz_space,ivis0,ifix_dt,new_vis,iDNS,
      +         ispray,icouple,iTcouple,iHcouple,ievap
@@ -12046,7 +12050,8 @@ c      brc_r = 4*(nnz+2)*3*2 !Brian 7/14/14
      +         tnumpart,rhow,part_grav,
      +         Cpp,Mw,Ms,Ru,Gam,Ion,Os,Sal,
      +         radius_init,radius_mass,delta_vis,
-     +         grav, t00,fcor
+     +         grav, t00,fcor,
+     +         vp_init,Tp_init,qf_init
 
 
       !params.in contains namelists to read
