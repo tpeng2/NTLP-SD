@@ -14,7 +14,7 @@ c     k8     = kind parameter for integers in mpi_io routines
 c     
       integer, parameter :: j_recl=4, k8=8
 
-      integer, parameter :: nscl = 2, nvar = (4+nscl)
+      integer, parameter :: nscl = 3, nvar = (4+nscl)
       integer, parameter :: maxnx=256,maxny=256,maxnz=256
       integer, parameter :: maxnz1=maxnz+1,
      + maxnz2=maxnz+2,maxnx2=maxnx+2,maxny2=maxny+2
@@ -1783,8 +1783,17 @@ c
 c
 c ------------ buoyancy (with hydrostatic part)
 c
+
+!MODIFY BUOYANCY TERM TO INCLUDE HUMIDITY
+!         w_buy = batag*(t(ix,iy,1,iz)*weit1 +
+!     +                  t(ix,iy,1,izp1)*weit)
+
          w_buy = batag*(t(ix,iy,1,iz)*weit1 +
-     +                  t(ix,iy,1,izp1)*weit)
+     +                  t(ix,iy,1,izp1)*weit)*
+     +   (1.0+0.61*(weit1*t(ix,iy,2,iz) + 
+     +    weit*t(ix,iy,2,izp1)))
+
+
 c
 c ------------ geostrophic wind
 c
@@ -5474,6 +5483,7 @@ c
         
          wtsfc(1) = qstar(1)
          wtsfc(2) = qstar(2)
+         wtsfc(3) = qstar(3)
 
          !tsfcc specified in input file for isfc = 1
 
@@ -5485,14 +5495,14 @@ c
          tsfcc(2) =  RHB*Mw/Ru/tsfcc(1)*610.94*
      +               EXP(17.6257*botC/(botC+243.04))/rhoa
 
-         !FOR TESTING PURPOSES:
-         tsfcc(2) = 1.0
 
          end if
 c
 c
+         !Gradients of temperature and scalars above inversion (upper BC)
          dtdzf(1)=0.003
-         dtdzf(2)=0.003
+         dtdzf(2)=0.000
+         dtdzf(3)=0.000
 c
          dtjump  = 0.0
          divgls  = 0.0
@@ -7235,6 +7245,10 @@ c
       return
       end
       subroutine tke_budget
+
+!NOTE::: THIS HAS NOT BEEN UPDATED TO REFLECT HUMIDITY IN THE BUOYANCY
+!EQUATION   DHR 7/5/16
+
 c
 c -------- get terms in resolved scale tke budget
 c          as in gabls writeup at w-points
