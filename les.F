@@ -15,7 +15,7 @@ c
       integer, parameter :: j_recl=4, k8=8
 
       integer, parameter :: nscl = 2, nvar = (4+nscl)
-      integer, parameter :: maxnx=256,maxny=256,maxnz=256
+      integer, parameter :: maxnx=128,maxny=128,maxnz=128
       integer, parameter :: maxnz1=maxnz+1,
      + maxnz2=maxnz+2,maxnx2=maxnx+2,maxny2=maxny+2
 
@@ -5479,20 +5479,18 @@ c
 
          !Assuming tsfcc(2) is giving RH:
 
-         botC=(tsfcc(1)-273.15)  
-         RHB = tsfcc(2)/100.0
-
-         tsfcc(2) =  RHB*Mw/Ru/tsfcc(1)*610.94*
-     +               EXP(17.6257*botC/(botC+243.04))/rhoa
-
-         !FOR TESTING PURPOSES:
-         tsfcc(2) = 1.0
+!         botC=(tsfcc(1)-273.15)  
+!         RHB = tsfcc(2)/100.0
+!
+!         tsfcc(2) =  RHB*Mw/Ru/tsfcc(1)*610.94*
+!     +               EXP(17.6257*botC/(botC+243.04))/rhoa
+!
 
          end if
 c
 c
          dtdzf(1)=0.003
-         dtdzf(2)=0.003
+         dtdzf(2)=0.0
 c
          dtjump  = 0.0
          divgls  = 0.0
