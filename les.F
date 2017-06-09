@@ -7,7 +7,7 @@ c     ----------------------------------------------------------------------
       integer :: ismlt,ifree,iradup,
      +     iupwnd,ibuoy,ifilt,itcut,isubs,ibrcl,iocean,method,
      +     idebug,iz_space,ivis0,ifix_dt,new_vis,iDNS,ispray,
-     +     icouple,iTcouple,iHcouple,ievap,ibuoy_h
+     +     icouple,iTcouple,iHcouple,ievap,ibuoy_h,ifields
 c     
 c     -------- j_recl = record length in "bytes" for history file
 c     k8     = kind parameter for integers in mpi_io routines
@@ -15,13 +15,13 @@ c
       integer, parameter :: j_recl=4, k8=8
 
       integer, parameter :: nscl = 3, nvar = (4+nscl)
-      integer, parameter :: maxnx=128,maxny=128,maxnz=128
+      integer, parameter :: maxnx=64,maxny=64,maxnz=64
       integer, parameter :: maxnz1=maxnz+1,
      + maxnz2=maxnz+2,maxnx2=maxnx+2,maxny2=maxny+2
 
       !Boundary conditions and other parameters
       real :: Uo, Ttop(nscl), Tbot(nscl),qstar(nscl),tsfcc(nscl)
-      real :: dtdzf(nscl),zo,ugcont,vgcont
+      real :: dtdzf(nscl),zo,ugcont,vgcont,t_init,inv_str
       real :: grav,t00,fcor,zi,zl,xl,yl,zw1
       integer :: isfc(nscl)
 c     
@@ -547,10 +547,13 @@ c
          if(iocean .eq. 1) then
             call randoc
          else
-            call get_fields
-            t(:,:,3,:) = 0.0
-            t(:,:,2,:) = 0.0
-            !call random   
+            if (ifields .eq. 1) then
+               call get_fields
+               t(:,:,3,:) = 0.0
+               t(:,:,2,:) = 0.0
+            else
+               call random   
+            end if
          endif
          !Call dns_vis even when doing LES since vis_m needs to be initialized with something
          !call dns_vis
@@ -2922,7 +2925,8 @@ c
 
       !Use Prantdl number for thermal diffusivity:
       vis_s(1:nnx,iys:iye,1,izs-1:ize+1) = nuf/Pra   ! alpha=nu/Prandtl   
-!      vis_s(1:nnx,iys:iye,2,izs-1:ize+1) = nuf/Sc    !Dv =nu/Sc
+      vis_s(1:nnx,iys:iye,2,izs-1:ize+1) = nuf/Sc    !Dv =nu/Sc
+      vis_s(1:nnx,iys:iye,3,izs-1:ize+1) = nuf/Sc    !Dv =nu/Sc
       r5 = 0.0
       e = 0.0
 
@@ -5099,11 +5103,11 @@ c
       !Now that temperature and momentum have been done, apply BCs on humidity:
       iscl = 2
 
-      if (ibuoy.eq.0 .or. qstar(1) .eq. 0.) then
-          thstar(iscl) = 0.0
-          t10xy(iscl)  = 0.0
-          tsfcc(iscl)  = t1xy(iscl)
-      else
+!      if (ibuoy.eq.0 .or. qstar(1) .eq. 0.) then
+!          thstar(iscl) = 0.0
+!          t10xy(iscl)  = 0.0
+!          tsfcc(iscl)  = t1xy(iscl)
+!      else
          dnom = (zody-psis)*vk74in
          if(isfc(iscl) .eq. 0) then
             thstar(iscl) = -qstar(iscl)/utau
@@ -5114,7 +5118,7 @@ c
             t10xy(iscl)  = thstar(iscl)*dnom
             qstar(iscl)  = -utau*thstar(iscl)
          endif
-      endif
+!      endif
 
 
       !Now compute BCs for spray concentration
@@ -5965,11 +5969,9 @@ c
       zi  = z(izi)
 c
       z_lower = zi - 50.0
-      t_lower = 300.0
+      t_lower = t_init
+      t_upper = t_init + inv_str
       z_upper = zi + 50.0
-      z_lower = 500.0
-      z_upper = 500.0
-      t_upper = 300.0
       slope   = (t_upper - t_lower)/(z_upper - z_lower)
 c
       do iz=izs,ize
@@ -5985,7 +5987,6 @@ c
            do iy=iys,iye
            do ix=1,nnx
               t(ix,iy,1,iz) = t_lower
-              !t(ix,iy,1,iz) = tsfcc(1) - 5.0 !Brian 5/28/14
 
            enddo
            enddo
@@ -5993,14 +5994,12 @@ c
            do iy=iys,iye
            do ix=1,nnx
               t(ix,iy,1,iz) = t_upper + (zz(iz+1) - z_upper)*dtdzf(1)
-              !t(ix,iy,1,iz) = tsfcc(1) - 5.0
            enddo
            enddo
          else
            do iy=iys,iye
            do ix=1,nnx
               t(ix,iy,1,iz) = t_lower + slope*(zz(iz+1) - z_lower)
-              !t(ix,iy,1,iz) = tsfcc(1) - 5.0 
            enddo
            enddo
          endif
@@ -12102,7 +12101,7 @@ c      brc_r = 4*(nnz+2)*3*2 !Brian 7/14/14
       namelist /grid_params/ ncpu_s, Uo, Ttop, Tbot,
      +         qstar, tsfcc, dtdzf,
      +         zi, zl, xl, yl, zw1,
-     +         ugcont, vgcont, zo
+     +         ugcont, vgcont, zo, t_init,inv_str
 
       namelist /path_names/ path_seed,path_part,path_res,
      +         path_sav,path_his,path_viz_xy,path_viz_xz,
@@ -12111,7 +12110,8 @@ c      brc_r = 4*(nnz+2)*3*2 !Brian 7/14/14
       namelist /flags/ ismlt,ifree,isfc,iradup,
      +         iupwnd,ibuoy,ifilt,itcut,isubs,ibrcl,iocean,
      +         method,idebug,iz_space,ivis0,ifix_dt,new_vis,iDNS,
-     +         ispray,icouple,iTcouple,iHcouple,ievap,ibuoy_h
+     +         ispray,icouple,iTcouple,iHcouple,ievap,ibuoy_h,
+     +         ifields
 
 
       namelist /constants/ rhoa, nuf, Cpa, Pra, Sc,
