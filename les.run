@@ -8,7 +8,7 @@
 #$ -N reid
 #$ -j y
 
-case=case2
+case=case0
 time=0000000
 runout=$case.out.$time
 

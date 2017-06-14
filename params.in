@@ -49,7 +49,7 @@ yl = 3000.0
 
 !Upper BC information:
 dtdzf(1) = 0.003, 0.0, 0.0
-t_init = 280.0
+t_init = 277.5
 inv_str = 5.0
 
 ugcont = 20.0
@@ -61,16 +61,16 @@ zw1 = 3.0  !The first grid point
 
 !Set the paths for code I/O. Must be on the scratch directory, not AFS!
 &path_names
-path_seed="/scratch365/drichte2/reid/case1/"
-path_part="/scratch365/drichte2/reid/case1/part.le.cou000"
-path_res="/scratch365/drichte2/reid/case1/u.le.cou000"
-path_sav="/scratch365/drichte2/reid/case1/"
-path_his="/scratch365/drichte2/reid/case1/"
-path_viz_xy="/scratch365/drichte2/reid/case1/"
-path_viz_xz="/scratch365/drichte2/reid/case1/"
-path_viz_yz="/scratch365/drichte2/reid/case1/"
-path_stuf="/scratch365/drichte2/reid/case1/"
-path_ran="/scratch365/drichte2/reid/case1/u.le.cou000"
+path_seed="/scratch365/drichte2/reid/case0/"
+path_part="/scratch365/drichte2/reid/case0/part.le.cou000"
+path_res="/scratch365/drichte2/reid/case0/u.le.cou000"
+path_sav="/scratch365/drichte2/reid/case0/"
+path_his="/scratch365/drichte2/reid/case0/"
+path_viz_xy="/scratch365/drichte2/reid/case0/"
+path_viz_xz="/scratch365/drichte2/reid/case0/"
+path_viz_yz="/scratch365/drichte2/reid/case0/"
+path_stuf="/scratch365/drichte2/reid/case0/"
+path_ran="/scratch365/drichte2/reid/case0/u.le.cou000"
 /
 
 

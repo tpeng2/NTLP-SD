@@ -20,7 +20,7 @@ c
      + maxnz2=maxnz+2,maxnx2=maxnx+2,maxny2=maxny+2
 
       !Boundary conditions and other parameters
-      real :: Uo, Ttop(nscl), Tbot(nscl),qstar(nscl),tsfcc(nscl)
+      real :: Uo, Ttop(nscl), Tbot(nscl),qstar(nscl),tsfcc(nscl),phi_scl
       real :: dtdzf(nscl),zo,ugcont,vgcont,t_init,inv_str
       real :: grav,t00,fcor,zi,zl,xl,yl,zw1
       integer :: isfc(nscl)
@@ -2479,7 +2479,7 @@ c
 
          theta_u = ws*(weit1*t(ix,iy,iscl,iz) +
      +                weit*t(ix,iy,iscl,izp1))
-         theta_l = 0.0
+         theta_l = ws*tsfcc(iscl)
          r4(ix,iy,iscl,iz) = r4(ix,iy,iscl,iz)
      +     +(theta_u - theta_l)*dzw_i(iz)
     
@@ -5127,8 +5127,9 @@ c
       if (isfc(iscl) .eq. 0) then
          alpha = ws/vk/utau
          thstar(iscl) = -qstar(iscl)/utau  !This isn't right...not logarithmic...
-         tsfcc(iscl) = (t1xy(iscl) + qstar(iscl)/ws - 
-     +   qstar(iscl)/ws*(z1/zo)**(-alpha))*(z1/zo)**alpha
+         phi_scl = qstar(iscl) - ws*tsfcc(iscl)
+         tsfcc(iscl) = (t1xy(iscl) + phi_scl/ws - 
+     +   phi_scl/ws*(z1/zo)**(-alpha))*(z1/zo)**alpha
          t10xy(iscl)  = thstar(iscl)*dnom  !This isn't right...not logarithmic...
 
       else
