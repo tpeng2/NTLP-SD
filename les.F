@@ -15,7 +15,7 @@ c
       integer, parameter :: j_recl=4, k8=8
 
       integer, parameter :: nscl = 3, nvar = (4+nscl)
-      integer, parameter :: maxnx=64,maxny=64,maxnz=64
+      integer, parameter :: maxnx=128,maxny=128,maxnz=128
       integer, parameter :: maxnz1=maxnz+1,
      + maxnz2=maxnz+2,maxnx2=maxnx+2,maxny2=maxny+2
 
@@ -7787,7 +7787,7 @@ c
      +         wtle(mid,1),wtsb(mid,1),wt_tot(mid,1),
      +         englez(mid),eavg(mid), wabs,
      +         maxval(partcount(1:nnx,iys:iye,1)),
-     +         tsfcc(3),txym(1,3),txym(4,3),txym(13,3)
+     +         tsfcc(3),txym(1,3),qstar(3),phi_scl
  6000 format(37e17.8)
 c
 c -------------- write profile information
