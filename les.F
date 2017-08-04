@@ -7,7 +7,7 @@ c     ----------------------------------------------------------------------
       integer :: ismlt,ifree,iradup,
      +     iupwnd,ibuoy,ifilt,itcut,isubs,ibrcl,iocean,method,
      +     idebug,iz_space,ivis0,ifix_dt,new_vis,iDNS,ispray,
-     +     icouple,iTcouple,iHcouple,ievap
+     +     icouple,iTcouple,iHcouple,ievap,ibuoy_h
 c     
 c     -------- j_recl = record length in "bytes" for history file
 c     k8     = kind parameter for integers in mpi_io routines
@@ -15,12 +15,13 @@ c
       integer, parameter :: j_recl=4, k8=8
 
       integer, parameter :: nscl = 3, nvar = (4+nscl)
-      integer, parameter :: maxnx=256,maxny=256,maxnz=256
+      integer, parameter :: maxnx=128,maxny=128,maxnz=128
       integer, parameter :: maxnz1=maxnz+1,
      + maxnz2=maxnz+2,maxnx2=maxnx+2,maxny2=maxny+2
 
       !Boundary conditions and other parameters
       real :: Uo, Ttop(nscl), Tbot(nscl),qstar(nscl),tsfcc(nscl)
+      real :: dtdzf(nscl),zo,ugcont,vgcont
       real :: grav,t00,fcor,zi,zl,xl,yl,zw1
       integer :: isfc(nscl)
 c     
@@ -120,7 +121,7 @@ c     ----------------------------------------------------------------------
       integer :: particletype,pad_diff
       integer :: numpart,tnumpart,ngidx
       integer :: iseed
-      real :: Rep_avg,part_grav
+      real :: Rep_avg,part_grav,ws
       real :: vp_init(3),Tp_init,qf_init
 
       real :: radius_init,radius_mass,rhow,nuf 
@@ -160,10 +161,10 @@ c     ----------------------------------------------------------------------
       use pars, only : nscl
       type con_d
       sequence
-      real ::  zo, vk, vkin, vk74, vk74in, 
+      real ::  vk, vkin, vk74, vk74in, 
      +     gcp, fcor_h, pi2,
-     +     batagk, batag, vgcont, ugcont, 
-     +     cdbtm, dtdzf(nscl), dtjump, ugal, divgls,
+     +     batagk, batag, 
+     +     cdbtm, dtjump, ugal, divgls,
      +     z1, utausv, dx, dy, dz, dt, 
      +     fnxy, dzdz, dsl, c23, dtgama, dtzeta, xkmax,
      +     time, zody, zody74,
@@ -173,10 +174,10 @@ c     ----------------------------------------------------------------------
       end type con_d
       type(con_d), target :: c_c
       real, pointer ::
-     +     zo, vk, vkin, vk74, vk74in, 
+     +     vk, vkin, vk74, vk74in, 
      +     gcp, fcor_h, pi2,
-     +     batagk, batag, vgcont, ugcont,
-     +     cdbtm, dtdzf(:), dtjump, ugal, divgls,
+     +     batagk, batag,
+     +     cdbtm, dtjump, ugal, divgls,
      +     z1, utausv, dx, dy, dz, dt,
      +     fnxy, dzdz, dsl, c23, dtgama, dtzeta, xkmax, 
      +     time, zody, zody74,
@@ -188,7 +189,6 @@ c     ----------------------------------------------------------------------
 c     
 c     --------------- pointer associations for constant variables
 c     
-      zo     => c_c%zo
       vk     => c_c%vk 
       vkin   => c_c%vkin
       vk74   => c_c%vk74
@@ -198,10 +198,7 @@ c
       pi2    => c_c%pi2
       batagk => c_c%batagk
       batag  => c_c%batag
-      vgcont => c_c%vgcont
-      ugcont => c_c%ugcont
       cdbtm  => c_c%cdbtm
-      dtdzf  => c_c%dtdzf
       dtjump => c_c%dtjump
       ugal   => c_c%ugal
       divgls => c_c%divgls
@@ -550,11 +547,13 @@ c
          if(iocean .eq. 1) then
             call randoc
          else
-            !call get_fields
-            call random   
+            call get_fields
+            t(:,:,3,:) = 0.0
+            t(:,:,2,:) = 0.0
+            !call random   
          endif
          !Call dns_vis even when doing LES since vis_m needs to be initialized with something
-         call dns_vis
+         !call dns_vis
          call get_max
       else
 
@@ -1785,14 +1784,17 @@ c ------------ buoyancy (with hydrostatic part)
 c
 
 !MODIFY BUOYANCY TERM TO INCLUDE HUMIDITY
-!         w_buy = batag*(t(ix,iy,1,iz)*weit1 +
-!     +                  t(ix,iy,1,izp1)*weit)
-
+     
+        if (i_buoy_h) then
          w_buy = batag*(t(ix,iy,1,iz)*weit1 +
      +                  t(ix,iy,1,izp1)*weit)*
      +   (1.0+0.61*(weit1*t(ix,iy,2,iz) + 
      +    weit*t(ix,iy,2,izp1)))
+         else
 
+         w_buy = batag*(t(ix,iy,1,iz)*weit1 +
+     +                  t(ix,iy,1,izp1)*weit)
+        end if
 
 c
 c ------------ geostrophic wind
@@ -2298,6 +2300,7 @@ c
       use fftwk
       use con_data
       use con_stats
+      use particles
 c
 c
       real fnt1(nnx,iys:iye,izs:ize)
@@ -2460,6 +2463,43 @@ c
 c -------- end monotone if block
 c
       endif
+
+c
+c -------- DHR 7/14/16: add vertical advection due to gravitational settling (iscl == 3 only assuming 1,2 are temp, humidity)
+c
+
+      if (iscl==3) then
+      if (iz .eq. 1) then
+
+      do iy=iys,iye
+      do ix=1,nnx
+
+         theta_u = ws*(weit1*t(ix,iy,iscl,iz) +
+     +                weit*t(ix,iy,iscl,izp1))
+         theta_l = 0.0
+         r4(ix,iy,iscl,iz) = r4(ix,iy,iscl,iz)
+     +     +(theta_u - theta_l)*dzw_i(iz)
+    
+      enddo
+      enddo
+
+      else
+
+      do iy=iys,iye
+      do ix=1,nnx
+         theta_u = weit1*t(ix,iy,iscl,iz) +
+     +                weit*t(ix,iy,iscl,izp1)
+         theta_l = weit3*t(ix,iy,iscl,iz) +
+     +                weit4*t(ix,iy,iscl,izm1)
+         r4(ix,iy,iscl,iz) = r4(ix,iy,iscl,iz)
+     +     +ws*(theta_u - theta_l)*dzw_i(iz)
+      enddo
+      enddo
+
+      end if
+      end if
+
+
 c
 c -------- save SGS fluxes for printout, gather sums on exit
 c
@@ -3207,22 +3247,22 @@ c
          enddo
          do iscl=1,nscl
             dnom3=t10xy(iscl)*windm
-            if(dnom3 .ne. 0.) then
-               dnom_i = 1.0/dnom3
-               do iy=iys,iye
-               do ix=1,nnx
-                  taut3m(ix,iy,iscl)=aut3m(iscl)*
-     +                 (windm*(t(ix,iy,iscl,iz)-t1xy(iscl))+
-     +                  wind(ix,iy)*(t1xy(iscl)-tsfcc(iscl)))*dnom_i
-               enddo
-               enddo
-            else
+!            if(dnom3 .ne. 0.) then
+!               dnom_i = 1.0/dnom3
+!               do iy=iys,iye
+!               do ix=1,nnx
+!                  taut3m(ix,iy,iscl)=aut3m(iscl)*
+!     +                 (windm*(t(ix,iy,iscl,iz)-t1xy(iscl))+
+!     +                  wind(ix,iy)*(t1xy(iscl)-tsfcc(iscl)))*dnom_i
+!               enddo
+!               enddo
+!            else
                do iy=iys,iye
                do ix=1,nnx
                   taut3m(ix,iy,iscl) = aut3m(iscl)
                enddo
                enddo
-            endif
+!            endif
          enddo
 c
       endif
@@ -4915,6 +4955,7 @@ c
       use fields
       use con_data
       use con_stats
+      use particles
       real buf(3+nscl)
 c
       parameter (iter_mo = 30, zeta_min = -6.0, zeta_max = 3.0)
@@ -5055,9 +5096,8 @@ c
          go to 9999
       endif
 
-!Now that temperature and momentum have been done, apply BCs on remaining scalars:
-
-      do iscl=2,nscl
+      !Now that temperature and momentum have been done, apply BCs on humidity:
+      iscl = 2
 
       if (ibuoy.eq.0 .or. qstar(1) .eq. 0.) then
           thstar(iscl) = 0.0
@@ -5074,11 +5114,29 @@ c
             t10xy(iscl)  = thstar(iscl)*dnom
             qstar(iscl)  = -utau*thstar(iscl)
          endif
-         amonin = -utau**3/(batagk*qstar(iscl))
-         zeta   = z1/amonin
       endif
 
-      enddo
+
+      !Now compute BCs for spray concentration
+      iscl = 3
+
+      if (isfc(iscl) .eq. 0) then
+         alpha = ws/vk/utau
+         thstar(iscl) = -qstar(iscl)/utau  !This isn't right...not logarithmic...
+         tsfcc(iscl) = (t1xy(iscl) + qstar(iscl)/ws - 
+     +   qstar(iscl)/ws*(z1/zo)**(-alpha))*(z1/zo)**alpha
+         t10xy(iscl)  = thstar(iscl)*dnom  !This isn't right...not logarithmic...
+
+      else
+         
+         alpha = ws/vk/utau
+         qstar(iscl) = ws*(t1xy(iscl) - tsfcc(iscl)*(z1/zo)**(-alpha))/
+     +   ((z1/zo)**(-alpha) - 1.0)
+         thstar(iscl) = -qstar(iscl)/utau  !This isn't right...not logarithmic...
+         t10xy(iscl)  = thstar(iscl)*dnom  !This isn't right...
+      end if
+
+ 
 
 c ---------- examples of two other scalars
 c
@@ -5114,6 +5172,9 @@ c
       do iscl = 1,nscl
       aut3m(iscl)  =  qstar(iscl)
       end do
+      
+!      iscl = 3  !Modify aut3m for getting the TOTAL from the specified NET (qstar is net)
+!      aut3m(iscl) = qstar(iscl) + ws*t1xy(iscl)
 c
       return
 c
@@ -5495,20 +5556,12 @@ c
          tsfcc(2) =  RHB*Mw/Ru/tsfcc(1)*610.94*
      +               EXP(17.6257*botC/(botC+243.04))/rhoa
 
-
          end if
 c
 c
-         !Gradients of temperature and scalars above inversion (upper BC)
-         dtdzf(1)=0.003
-         dtdzf(2)=0.000
-         dtdzf(3)=0.000
 c
          dtjump  = 0.0
          divgls  = 0.0
-         zo      = 0.1
-         ugcont  = 10.0 
-         vgcont  = 0.0
 
   
 c
@@ -5914,14 +5967,15 @@ c
       z_lower = zi - 50.0
       t_lower = 300.0
       z_upper = zi + 50.0
-      t_upper = 308.0
+      z_lower = 500.0
+      z_upper = 500.0
+      t_upper = 300.0
       slope   = (t_upper - t_lower)/(z_upper - z_lower)
 c
       do iz=izs,ize
          do iy=iys,iye
          do ix=1,nnx
             u(ix,iy,iz) = ugcont-ugal
-c           u(ix,iy,iz) = ug(iz) - ugal
             v(ix,iy,iz) = vgcont
             w(ix,iy,iz) = 0.0
             e(ix,iy,iz) = 0.0
@@ -5952,7 +6006,7 @@ c           u(ix,iy,iz) = ug(iz) - ugal
          endif
          do iy=iys,iye
          do ix=1,nnx
-            !t(ix,iy,2,iz) = 0.  !For now just set the initial humidity field to zero
+            t(ix,iy,2:nscl,iz) = 0.  !For now just set the initial humidity field to zero
             w(ix,iy,iz)   = 0.
             r1(ix,iy,iz)  = 0.
             r2(ix,iy,iz)  = 0.
@@ -6940,7 +6994,7 @@ c
      + 'SGS_WT',7X,'SHRZ',8X,'BUOY')
       do 19999 iz=iz_end,iz_strt,-1
          !write(lu,4300)iz,txym(iz,1)-t_ref,divz(iz),
-	 write(lu,4300)iz,txym(iz,1)-tref, txym(iz,2),divz(iz),
+	 write(lu,4300)iz,txym(iz,1)-tref, txym(iz,3),divz(iz),
      +              englez(iz),eavg(iz),wtle(iz,1),
      +              wtsb(iz,1),shrz(iz),buyz(iz)
  4300    format(1X,I3,e12.4,8e12.4)
@@ -6967,25 +7021,25 @@ c
 c
 c --------------- output additional scalars
 c
-c     if(nscl .eq. 2) then
-c     write(lu,5005)tsfcc(2),wtsfc(2)
-c5005 format(/,'  SURFACE VALUE: TXYM(2) =',e15.6,' WTSFC(2) = ',e15.6)
-c     write(lu,5100) (iz,txym(iz,2),wtle(iz,2),
-c    +              wtsb(iz,2),iz=iz_strt,iz_end)
-c5100 format(//,' IZ',5x,' SCALAR-1 MEAN',8x,' WS1LE',10x,
-c    +          ' WS1SB',10x
-c    +       ,/,(1x,i4,3(3x,e12.6)))
-c     else if (nscl .eq. 3) then
-c     write(lu,5205)tsfcc(2),wtsfc(2),tsfcc(3),wtsfc(3)
-c5205 format(/,'  SURFACE VALUE: TXYM(2) =',e15.6,' WTSFC(2) = ',e15.6,
-c    +       /,'  SURFACE VALUE: TXYM(3) =',e15.6,' WTSFC(3) = ',e15.6)
-c     write(lu,5200) (iz,txym(iz,2),txym(iz,3),wtle(iz,2),
-c    +    wtsb(iz,2),wtle(iz,3),wtsb(iz,3),iz=iz_strt,iz_end)
-c5200 format(//,' IZ',5x,' SCALAR-1 MEAN',8x,' SCALAR-2 MEAN',10x,
-c    +          ' WS1LE',10x,' WS1SB',10x,' WS2LE',10x,' WS1SB'
-c    +       ,/,(1x,i4,6(3x,e12.6)))
-c     endif
-c
+      if(nscl .eq. 2) then
+      write(lu,5005)tsfcc(2),wtsfc(2)
+ 5005 format(/,'  SURFACE VALUE: TXYM(2) =',e15.6,' WTSFC(2) = ',e15.6)
+      write(lu,5100) (iz,txym(iz,2),wtle(iz,2),
+     +              wtsb(iz,2),iz=iz_strt,iz_end)
+ 5100 format(//,' IZ',5x,' SCALAR-1 MEAN',8x,' WS1LE',10x,
+     +          ' WS1SB',10x
+     +       ,/,(1x,i4,3(3x,e15.6)))
+      else if (nscl .eq. 3) then
+      write(lu,5205)tsfcc(2),wtsfc(2),tsfcc(3),wtsfc(3)
+ 5205 format(/,'  SURFACE VALUE: TXYM(2) =',e15.6,' WTSFC(2) = ',e15.6,
+     +       /,'  SURFACE VALUE: TXYM(3) =',e15.6,' WTSFC(3) = ',e15.6)
+      write(lu,5200) (iz,txym(iz,2),txym(iz,3),wtle(iz,2),
+     +    wtsb(iz,2),wtle(iz,3),wtsb(iz,3),iz=iz_strt,iz_end)
+ 5200 format(//,' IZ',5x,' SCALAR-1 MEAN',8x,' SCALAR-2 MEAN',10x,
+     +          ' WS1LE',10x,' WS1SB',10x,' WS2LE',10x,' WS1SB'
+     +       ,/,(1x,i4,6(3x,e15.6)))
+      endif
+ 
       return
       end
       subroutine xy_stats
@@ -7733,11 +7787,7 @@ c
      +         wtle(mid,1),wtsb(mid,1),wt_tot(mid,1),
      +         englez(mid),eavg(mid), wabs,
      +         maxval(partcount(1:nnx,iys:iye,1)),
-     +         Rep_avg,phip,phiw,phiv
-c    +         tps(mid,2), tps(mid,3),
-c    +         wtle(mid,2),wtsb(mid,2),wt_tot(mid,2),
-c    +         wtle(mid,3),wtsb(mid,3),wt_tot(mid,3)
-c 6000 format(5e17.8)
+     +         tsfcc(3),txym(1,3),txym(4,3),txym(13,3)
  6000 format(37e17.8)
 c
 c -------------- write profile information
@@ -11386,6 +11436,8 @@ c      brc_r = 4*(nnz+2)*3*2 !Brian 7/14/14
 
       m_s = Sal/1000.0*4.0/3.0*pi*radius_mass**3*rhow
 
+      ws = grav*(rhow*(2*radius_init)**2/18.0/nuf/rhoa)
+
 
       if (myid==0) write(*,*) 'Init Particle radius = ',radius_init  !Brian 7/14/14
       if (myid==0) write(*,*) 'Particle Salinity = ',Sal     
@@ -11395,6 +11447,7 @@ c      brc_r = 4*(nnz+2)*3*2 !Brian 7/14/14
       if (myid==0) write(*,*) 'nuf = ',nuf
       if (myid==0) write(*,*) 'CpaCpp = ',CpaCpp
       if (myid==0) write(*,*) 'Pra = ',Pra
+      if (myid==0) write(*,*) 'ws = ',ws
 
       !Initialize the linked list of particles:
       nullify(part,first_particle)
@@ -12047,8 +12100,9 @@ c      brc_r = 4*(nnz+2)*3*2 !Brian 7/14/14
      +                       itstr,it_his,it_viz,i_viz,itn
 
       namelist /grid_params/ ncpu_s, Uo, Ttop, Tbot,
-     +         qstar, tsfcc,
-     +         zi, zl, xl, yl, zw1
+     +         qstar, tsfcc, dtdzf,
+     +         zi, zl, xl, yl, zw1,
+     +         ugcont, vgcont, zo
 
       namelist /path_names/ path_seed,path_part,path_res,
      +         path_sav,path_his,path_viz_xy,path_viz_xz,
@@ -12057,7 +12111,7 @@ c      brc_r = 4*(nnz+2)*3*2 !Brian 7/14/14
       namelist /flags/ ismlt,ifree,isfc,iradup,
      +         iupwnd,ibuoy,ifilt,itcut,isubs,ibrcl,iocean,
      +         method,idebug,iz_space,ivis0,ifix_dt,new_vis,iDNS,
-     +         ispray,icouple,iTcouple,iHcouple,ievap
+     +         ispray,icouple,iTcouple,iHcouple,ievap,ibuoy_h
 
 
       namelist /constants/ rhoa, nuf, Cpa, Pra, Sc,

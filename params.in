@@ -1,16 +1,16 @@
 
 !Time step information
 &step_params
-iti=49999
-itmax=60000
+iti=0
+itmax=50000
 imean=100
 ihst=10
-itape=100
-itstr=50001
-it_his=50001
-it_viz=50001
+itape=5000
+itstr=1
+it_his=1
+it_viz=1
 i_viz=5000
-itn = 10  !Index for "u.le.cou001" files
+itn = 0  !Index for "u.le.cou001" files
 /
 
 !Flags for various features
@@ -18,7 +18,7 @@ itn = 10  !Index for "u.le.cou001" files
 ismlt=0, ifree=0, iradup=1, iupwnd=1
 ibuoy=1, ifilt=0, itcut=1, isubs=0, ibrcl=0, iocean=0
 method=3, idebug=1, iz_space=1, ivis0=1, ifix_dt=0, new_vis=-1
-isfc = 0, 1  ! isfc = 0 sets surface flux (qstar), isfc = 1 sets surface condition (Dirichlet through tsfcc)
+isfc = 0, 1, 1  ! isfc = 0 sets surface flux (qstar), isfc = 1 sets surface condition (Dirichlet through tsfcc)
 iDNS = 0
 ispray=1
 icouple=1
@@ -37,29 +37,29 @@ Ttop(1) = 300.15, 95.0  !Currently this should be (temperature, relative humidit
 Tbot(1) = 300.15, 100.0  !Currently this should be (temperature, relative humidity) (used in DNS)
 
 !Use for LES:
-qstar = 0.5, 0.5  !Surface fluxes of (temperature, humidity) (used for LES and DNS)
-tsfcc = 305.15, 100.0    !Surface conditions of (temp, humidity) (used for LES) -- make sure tsfcc is gt than t00 for both isfc=0 or 1
+qstar = 0.5, 0.5, 0.5  !Surface fluxes of (temperature, humidity, scalar) (used for LES and DNS)
+tsfcc = 305.15, 100.0, 1.0    !Surface conditions of (temp, humidity,scalar) (used for LES) -- make sure tsfcc is gt than t00 for both isfc=0 or 1
 
 zi = 1000.0  !This has to do with grid stretching; make equal to zl for Couette/channel
 zl = 2048.0
 xl = 5120.0
 yl = 5120.0
 
-zw1 = 2.5  !The first grid point
+zw1 = 3.0  !The first grid point
 /
 
 !Set the paths for code I/O. Must be on the scratch directory, not AFS!
 &path_names
-path_seed="/scratch365/YOUR_NDID/tutorial/case1/"
-path_part="/scratch365/YOUR_NDID/tutorial/case1/part.le.cou000"
-path_res="/scratch365/YOUR_NDID/tutorial/case1/u.le.cou000"
-path_sav="/scratch365/YOUR_NDID/tutorial/case1/"
-path_his="/scratch365/YOUR_NDID/tutorial/case1/"
-path_viz_xy="/scratch365/YOUR_NDID/tutorial/case1/"
-path_viz_xz="/scratch365/YOUR_NDID/tutorial/case1/"
-path_viz_yz="/scratch365/YOUR_NDID/tutorial/case1/"
-path_stuf="/scratch365/YOUR_NDID/tutorial/case1/"
-path_ran="/scratch365/YOUR_NDID/tutorial/case1/u.le.cou000"
+path_seed="/scratch365/drichte2/LES_Eulerian/case1/"
+path_part="/scratch365/drichte2/LES_Eulerian/case1/part.le.cou000"
+path_res="/scratch365/drichte2/LES_Eulerian/case1/u.le.cou000"
+path_sav="/scratch365/drichte2/LES_Eulerian/case1/"
+path_his="/scratch365/drichte2/LES_Eulerian/case1/"
+path_viz_xy="/scratch365/drichte2/LES_Eulerian/case1/"
+path_viz_xz="/scratch365/drichte2/LES_Eulerian/case1/"
+path_viz_yz="/scratch365/drichte2/LES_Eulerian/case1/"
+path_stuf="/scratch365/drichte2/LES_Eulerian/case1/"
+path_ran="/scratch365/drichte2/LES_Eulerian/case1/u.le.cou000"
 /
 
 
