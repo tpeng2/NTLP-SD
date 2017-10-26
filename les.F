@@ -15,7 +15,7 @@ c
       integer, parameter :: j_recl=4, k8=8
 
       integer, parameter :: nscl = 3, nvar = (4+nscl)
-      integer, parameter :: maxnx=128,maxny=128,maxnz=128
+      integer, parameter :: maxnx=128,maxny=128,maxnz=256
       integer, parameter :: maxnz1=maxnz+1,
      + maxnz2=maxnz+2,maxnx2=maxnx+2,maxny2=maxny+2
 
@@ -547,10 +547,10 @@ c
          if(iocean .eq. 1) then
             call randoc
          else
-            call get_fields
-            t(:,:,3,:) = 0.0
-            t(:,:,2,:) = 0.0
-            !call random   
+            !call get_fields
+            !t(:,:,3,:) = 0.0
+            !t(:,:,2,:) = 0.0
+            call random   
          endif
          !Call dns_vis even when doing LES since vis_m needs to be initialized with something
          !call dns_vis
@@ -730,6 +730,8 @@ c
 !      if ( (ispray==1) .AND. (iss == 0)) then
 !        call particle_generate(istage)
 !      end if
+
+
       if (ispray==1) then
          !t_s = mpi_wtime()
          !call particle_update_cn(it,istage) 
@@ -1580,7 +1582,7 @@ c
       include 'mpif.h'
       integer istatus(mpi_status_size)
 c
-      parameter(js = 6, ns = 3, nstat = js + ns*nscl)
+      parameter(js = 7, ns = 3, nstat = js + ns*nscl)
       real stat(0:nnz,nstat)
 c
 c ------ temp arrays to hold rhs from step n-1 and
@@ -1647,10 +1649,10 @@ c
            stat(iz,1) = uwsb(iz)
            stat(iz,2) = vwsb(iz)
            stat(iz,3) = wwsb(iz)
-!           stat(iz,4) = tr_tau(iz)
+           stat(iz,4) = tr_tau(iz)
            stat(iz,5) = triz(iz)
            stat(iz,6) = shrz(iz)
-           !stat(iz,7) = t_diss(iz)
+           stat(iz,7) = t_diss(iz)
         enddo
         m1 = js
         m2 = js + nscl
@@ -1679,10 +1681,10 @@ c
         enddo
         do iz=1,nnz
            wwsb(iz)   = stat(iz,3)
-!           tr_tau(iz) = stat(iz,4)
+           tr_tau(iz) = stat(iz,4)
            triz(iz)   = stat(iz,5)
            shrz(iz)   = stat(iz,6)
-           !t_diss(iz) = stat(iz,7)
+           t_diss(iz) = stat(iz,7)
         enddo
         do l=1,nscl
            do iz=1,nnz
@@ -7349,7 +7351,7 @@ c
 !      then t_diss = 2*nu*<sij sij>
 ! ---- NOTE: these are computed at the w-locations!  (not u,v locations)
 !
-         t_diss(iz) = 0.0
+         !t_diss(iz) = 0.0
          do j=iys,iye
          do i=1,nnx
 
@@ -7458,7 +7460,7 @@ c
 c ------ we have all terms on all processors for all z, add them up
 c        treat tr_tau at bottom special, tr_tau = 0
 c
-!      tr_tau(0) = 0.0
+      tr_tau(0) = 0.0
       do iz=1,nnz
 c
          izp1 = iz + 1
@@ -7484,7 +7486,7 @@ c
          !Now make t_sprod the spray tke term to reduce new variables:
          t_sprod(iz) = -stat(iz,5)
          t_buoy(iz)  =  batag*wtle(iz,1)
-         t_diss(iz) = stat(iz,3)
+         !t_diss(iz) = stat(iz,3)
 c
       enddo
 c
@@ -7691,7 +7693,11 @@ c          stat(.,3) = Particle: <T' Q'>
           if (iscl == 1) then
           if (iTcouple ==1) then
             qfluc = partTsrc(i,j,iz)-Tpsrc(iz)
+            if (iz==nnz) then
+            qflucp1 = 0.0
+            else
             qflucp1 = partTsrc(i,j,izp1)-Tpsrc(izp1)
+            end if
             stat(iz,3) = stat(iz,3) + 
      +         weit*(qflucp1*Tflucp1) + weit1*(qfluc*Tfluc)
           endif
@@ -7701,7 +7707,11 @@ c          stat(.,3) = Particle: <T' Q'>
           if (iscl == 2) then
           if (iHcouple ==1) then
             qfluc = partHsrc(i,j,iz)-Hpsrc(iz)
+            if (iz==nnz) then
+            qflucp1 = 0.0
+            else
             qflucp1 = partHsrc(i,j,izp1)-Hpsrc(izp1)
+            end if
             stat(iz,3) = stat(iz,3) + 
      +         weit*(qflucp1*Tflucp1) + weit1*(qfluc*Tfluc)
           endif
@@ -7709,7 +7719,11 @@ c          stat(.,3) = Particle: <T' Q'>
 
           if (iscl .eq. 2 .and. iHcouple .eq. 1 ) then
               qfluc = partTEsrc(i,j,iz)-TEpsrc(iz)
+              if (iz==nnz) then
+              qflucp1 = 0.0
+              else
               qflucp1 = partTEsrc(i,j,izp1)-TEpsrc(izp1)
+              end if
               Tv_part2(iz) = Tv_part2(iz) + 
      +          weit*(qflucp1*Tflucp1) + weit1*(qfluc*Tfluc)
   
@@ -10835,7 +10849,7 @@ c
       implicit none
       include 'mpif.h'
 
-      integer :: istatus(mpi_status_size),ierr
+      integer :: istatus(mpi_status_size),ierr,itest
       integer :: ix,iy,iz
       !preceding letter: r=right,l=left,t=top,b=bot.
       !_s: buf of things to send TO r,l,t,b
@@ -10857,7 +10871,7 @@ c      real :: tlbuf_s(nnz+2,3,2,4),tlbuf_r(nnx+2,2,3,4) !Brian 7/14/14
       real :: trbuf_s(nnz+2,2,2,5),trbuf_r(nnz+2,3,3,5) !Brian 7/14/14
       real :: brbuf_s(nnz+2,2,3,5),brbuf_r(nnz+2,3,2,5) !Brian 7/14/14
       real :: blbuf_s(nnz+2,3,3,5),blbuf_r(nnz+2,2,2,5) !Brian 7/14/14
-      real :: tlbuf_s(nnz+2,3,2,5),tlbuf_r(nnx+2,2,3,5) !Brian 7/14/14
+      real :: tlbuf_s(nnz+2,3,2,5),tlbuf_r(nnz+2,2,3,5) !Brian 7/14/14
 
       !MPI send counts:
       integer :: rc_s,rc_r,trc_s,trc_r,tc_s,tc_r,tlc_s,tlc_r
@@ -10917,6 +10931,7 @@ c      real :: tlbuf_s(nnz+2,3,2,4),tlbuf_r(nnx+2,2,3,4) !Brian 7/14/14
       Text(0:nnz+1,iys:iye,mxs:mxe) = T_t(0:nnz+1,iys:iye,mxs:mxe)
       T2ext(0:nnz+1,iys:iye,mxs:mxe) = T2_t(0:nnz+1,iys:iye,mxs:mxe) !Brian 7/14/14
 
+
       !Recall that SR assign_nbrs assigned rproc,lproc, etc.
 
       !Going to call 6 sendrecv calls - one for each proc. nbr.:
@@ -10946,7 +10961,7 @@ c      brc_r = 4*(nnz+2)*3*2 !Brian 7/14/14
       trc_s = 5*(nnz+2)*2*2 !Brian 7/14/14
       trc_r = 5*(nnz+2)*3*3 !Brian 7/14/14
       rc_s = 5*(nnz+2)*(mxe-mxs+1)*2 !Brian 7/14/14
-      rc_r = 5*(nnx+2)*(mxe-mxs+1)*3 !Brian 7/14/14
+      rc_r = 5*(nnz+2)*(mxe-mxs+1)*3 !Brian 7/14/14
       tlc_s = 5*(nnz+2)*3*2 !Brian 7/14/14
       tlc_r = 5*(nnz+2)*2*3 !Brian 7/14/14
       bc_s = 5*(nnz+2)*3*(iye-iys+1) !Brian 7/14/14
@@ -11020,11 +11035,11 @@ c      brc_r = 4*(nnz+2)*3*2 !Brian 7/14/14
       rbuf_r=0.0;trbuf_r=0.0;tbuf_r=0.0;tlbuf_r=0.0;lbuf_r=0.0
       blbuf_r=0.0;bbuf_r=0.0;brbuf_r=0.0
 
+
       !Left/right:
       call MPI_Sendrecv(rbuf_s,rc_s,mpi_real8,rproc,3,
      +        lbuf_r,lc_r,mpi_real8,lproc,3,mpi_comm_world,istatus,ierr)
 
-      call mpi_barrier(mpi_comm_world,ierr)
       call MPI_Sendrecv(lbuf_s,lc_s,mpi_real8,lproc,4,
      +        rbuf_r,rc_r,mpi_real8,rproc,4,mpi_comm_world,istatus,ierr)
 
@@ -11053,6 +11068,8 @@ c      brc_r = 4*(nnz+2)*3*2 !Brian 7/14/14
      +         tlbuf_r,tlc_r,mpi_real8,tlproc,10,
      +         mpi_comm_world,istatus,ierr)
 
+
+
       !Now fill the ext arrays with the recieved buffers:
       uext(0:nnz+1,iys:iye,mxe+1:mxe+3) = 
      +     tbuf_r(1:nnz+2,1:iye-iys+1,1:3,1)
@@ -11066,6 +11083,7 @@ c      brc_r = 4*(nnz+2)*3*2 !Brian 7/14/14
       uext(0:nnz+1,iys-2:iys-1,mxs:mxe) =
      +     lbuf_r(1:nnz+2,1:2,1:mxe-mxs+1,1)
       uext(0:nnz+1,iys-2:iys-1,mxe+1:mxe+3) = tlbuf_r(1:nnz+2,1:2,1:3,1)
+
  
       vext(0:nnz+1,iys:iye,mxe+1:mxe+3) = 
      +     tbuf_r(1:nnz+2,1:iye-iys+1,1:3,2)
@@ -11627,6 +11645,10 @@ c      brc_r = 4*(nnz+2)*3*2 !Brian 7/14/14
          bproc = myid-ncpu_s
          brproc = myid-ncpu_s+1
       end if
+
+
+      write(*,'(9i8)') myid,rproc,trproc,tproc,tlproc,lproc,blproc,
+     + bproc,brproc
 
       return
       end subroutine assign_nbrs
