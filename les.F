@@ -15,8 +15,7 @@ c
       integer, parameter :: j_recl=4, k8=8
 
       integer, parameter :: nscl = 2, nvar = (4+nscl)
-      integer, parameter :: maxnx=256,maxny=512,maxnz=256
-      !integer, parameter :: maxnx=128,maxny=256,maxnz=128
+      integer, parameter :: maxnx=128,maxny=256,maxnz=128
       integer, parameter :: maxnz1=maxnz+1,
      + maxnz2=maxnz+2,maxnx2=maxnx+2,maxny2=maxny+2
 
@@ -3485,7 +3484,7 @@ c
       do ix=1,nnx
 !        u(ix,iy,izp1)  = 2.0*Uo-u(ix,iy,iz)
          u(ix,iy,izp1) = u(ix,iy,iz)  !Open channel has no-flux at top
-         v(ix,iy,izp1)  = -v(ix,iy,iz) 
+         v(ix,iy,izp1)  = v(ix,iy,iz) 
          w(ix,iy,izp1)  = 0.0 
          r3(ix,iy,izp1) = 0.0
          DwDt(ix,iy,izp1) = 0.0
@@ -4342,8 +4341,8 @@ c
 !      t_u_avg_u = t_u_avg_u*fnxy
 !      t_l_avg_u = t_l_avg_u*fnxy
  
-      if (myid==0) write(*,'(a,i,2e15.6)') 'D0',myid,Dwavg,t_u_avg
-      if (myid==8) write(*,'(a,i,2e15.6)') 'D0',myid,Dwavgm1,t_l_avg
+!      if (myid==0) write(*,'(a,i,2e15.6)') 'D0',myid,Dwavg,t_u_avg
+!      if (myid==8) write(*,'(a,i,2e15.6)') 'D0',myid,Dwavgm1,t_l_avg
 
 !      if (myid==0) write(*,'(a,i,2e15.6)') 'D1',myid,Dwavg_u,t_u_avg_u
 !      if (myid==8) write(*,'(a,i,2e15.6)')'D1',myid,Dwavgm1_u,t_l_avg_u
@@ -10922,11 +10921,11 @@ c
 
            !In the case of having no inertia, the new particle velocity
            !must be set to the NEW uf:
-           if (part%xp(3) .gt. 0.0) then
-             call uf_interp 
-           else
-             part%uf(1:3) = 0.0
-           end if
+           !if (part%xp(3) .gt. 0.0) then
+           !  call uf_interp 
+           !else
+           !  part%uf(1:3) = 0.0
+           !end if
 
            part%vp(1:3) = part%uf(1:3) !For now particles are passive tracers with no inertia
            part%vp(3) = part%vp(3)-ws
@@ -11068,12 +11067,12 @@ c
 
            !In the case of having no inertia, the new particle velocity
            !must be set to the NEW uf:
-           if (part%xp(3) .gt. 0.0) then
-             call uf_interp 
-             !call uf_interp_lin
-           else
-             part%uf(1:3) = 0.0
-           end if
+           !if (part%xp(3) .gt. 0.0) then
+           !  call uf_interp 
+           !  !call uf_interp_lin
+           !else
+           !  part%uf(1:3) = 0.0
+           !end if
 
            part%vp(1:3) = part%uf(1:3) !For now particles are passive tracers with no inertia
            part%vp(3) = part%vp(3)-ws
@@ -11682,6 +11681,7 @@ c
       integer :: my_partnum,tot_partnum,my_reintro,tot_killed
       real :: xv,yv,zv,ran2,vinj
       real :: xpart(nnx),y2part(nnx),yp1,ypn,ddx
+      real :: vpinit
 
 
       !For a Dirichlet condition at the bottom wall, want to make the
@@ -11814,9 +11814,13 @@ c
         xv = ran2(iseed)*(xmax-xmin) + xmin
         yv = ran2(iseed)*(ymax-ymin) + ymin
         !zv = ran2(iseed)*(0.0-zpart) + zpart
-        zv = 0.0 !For constant flux, put them all at bottom boundary to begin
+        zv = zl-radius_init !For constant flux, put them all at bottom boundary to begin
 
-        call create_particle((/xv,yv,zv/),(/0.0,0.0,0.0/),Tbot(1),0.0,2)
+
+        !In profiles2, create at top with downwards settling velocity
+        vpinit = rhow*(2.0*radius_init)**2/18.0/(nuf*rhoa)*part_grav
+        call create_particle((/xv,yv,zv/),
+     +                       (/0.0,0.0,-vpinit/),Tbot(1),0.0,2)
 
       end do
 
@@ -11867,13 +11871,11 @@ c
          part%xp(3) = top - (part%xp(3)-top)
       end if
 
-      !Reflect off the bottom of reservoir:
-      if (part%xp(3) .LT. zpart) then
-        part%xp(3) = zpart + (zpart-part%xp(3))
-      end if 
+!      !Reflect off the bottom of reservoir:
+!      if (part%xp(3) .LT. zpart) then
+!        part%xp(3) = zpart + (zpart-part%xp(3))
+!      end if 
 
-
-      !Now check to purge the reservoir
       if (part%xp(3) .LT. 0.0) then
 
         num_killed = num_killed + 1
@@ -13132,7 +13134,8 @@ c      brc_r = 4*(nnz+2)*3*2 !Brian 7/14/14
       do idx=1,numpart
       xv = ran2(iseed)*(xmax-xmin) + xmin
       yv = ran2(iseed)*(ymax-ymin) + ymin
-      zv = ran2(iseed)*(zpart-0.0) + 0.0  !Everyone puts them into first two grid cells
+      !zv = ran2(iseed)*(zpart-0.0) + 0.0  !Everyone puts them into first two grid cells
+      zv = ran2(iseed)*zl
       call create_particle((/xv,yv,zv/),vp_init,
      +         Tp_init,qf_init,idx) 
       end do
