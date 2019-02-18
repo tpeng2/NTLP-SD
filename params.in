@@ -11,6 +11,7 @@ it_his=1     !Time step to begin recording history files
 it_viz=1     !Time step to begin recording viz files
 i_viz=10000   !Time steps between writing to viz file
 itn = 0  !Index for "u.le.cou001" files
+substeps=2  !How many particle substeps?
 /
 
 !Flags for various features
@@ -27,6 +28,7 @@ icouple=0
 iTcouple=0
 iHcouple=0  !iHcouple also controls TE couple
 ievap=1
+imultistep=1   !Do particle substepping?
 /
 
 !Grid and domain parameters
