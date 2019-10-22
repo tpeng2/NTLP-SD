@@ -13,16 +13,18 @@ set( CMAKE_Fortran_COMPILER ${MPI_Fortran_COMPILER})
 
 # Setup Compile Flags
 set (CMAKE_Fortran_FLAGS_RELEASE "${CMAKE_Fortran_FLAGS_RELEASE} -i4 -r8")
-set (CMAKE_Fortran_FLAGS_DEBUG   "${CMAKE_Fortran_FLAGS_DEBUG} -g -traceback -check pointer -check bounds -i4 -r8")
+set (CMAKE_Fortran_FLAGS_DEBUG   "${CMAKE_Fortran_FLAGS_DEBUG} -g -traceback -check pointer  -check bounds -i4 -r8")
 
 # Build Library
 add_library (fft STATIC "fft.f")
 add_library (kdtree STATIC "kdtree.f90")
 
 # Build Executable
-set_source_files_properties( "les.F" COMPILE_FLAGS "-assume byterecl")
+file(GLOB MOD Modules/*.F)
+file(GLOB SRC Subroutines/*.F)
+set_source_files_properties(${MOD} ${SRC} COMPILE_FLAGS "-assume byterecl")
 
-add_executable (lesmpi.a "les.F")
+add_executable (lesmpi.a ${SRC} ${MOD})
 target_link_libraries (lesmpi.a fft kdtree)
 
 install ( TARGETS lesmpi.a RUNTIME DESTINATION "bin")
