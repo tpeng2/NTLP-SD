@@ -24,8 +24,8 @@ echo $imachine > ./mach.file
 echo $datadir >> ./mach.file
 
 #Debug type
-#mpirun -n 64 $homedir/../debug/lesmpi.a $homedir/params.f90 > $datadir/$runout
+#mpirun -n $NSLOTS $homedir/../debug/lesmpi.a $homedir/params.f90 > $datadir/$runout
 
-mpirun -n 64 $homedir/../build/lesmpi.a $homedir/params.f90 > $datadir/$runout
+mpirun -n $NSLOTS $homedir/../build/lesmpi.a $homedir/params.f90 > $datadir/$runout
 
 
