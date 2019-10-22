@@ -23,6 +23,9 @@ imachine=0
 echo $imachine > ./mach.file
 echo $datadir >> ./mach.file
 
-mpirun -n 64 $homedir/../build/lesmpi.a $homedir/params.in > $datadir/$runout
+#Debug type
+#mpirun -n 64 $homedir/../debug/lesmpi.a $homedir/params.f90 > $datadir/$runout
+
+mpirun -n 64 $homedir/../build/lesmpi.a $homedir/params.f90 > $datadir/$runout
 
 
