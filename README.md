@@ -12,6 +12,11 @@ cd build
 cmake ..
 make
 ```
+## DEBUG (using -check bounds)
+mkdir debug
+cd debug
+cmake -DCMAKE_BUILD_TYPE=Debug ..
+make
 
 ## SETUP AND RUNNING
 To run, make a directory ("case1" or something) where les.run and params.in will go
