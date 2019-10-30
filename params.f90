@@ -19,8 +19,8 @@ ismlt=0, ifree=0, iradup=0, iupwnd=0
 ibuoy=0, ifilt=0, itcut=1, isubs=0, ibrcl=0, iocean=0
 method=3, idebug=1, iz_space=1, ivis0=0, ifix_dt=0, new_vis=-1
 isfc = 0, 1  ! isfc = 0 sets surface flux (qstar), isfc = 1 sets surface condition (Dirichlet through tsfcc)
-iDNS = 1
-ifields = 1  ! if set to 1, reads the initial condition from path_ran below; otherwise calls subroutine random
+iDNS = 0
+ifields = 0  ! if set to 1, reads the initial condition from path_ran below; otherwise calls subroutine random
 ilin = 0   !1 means linear interpolation for particle, 6th order otherwise
 icouple = 0
 iTcouple=1
@@ -43,7 +43,7 @@ cfl = 0.4
 dt_new = 0.1
 
 !Use for DNS:
-Uo = 0.0  !Sets the magnitude of the top and bottom plate velocities (Couette flow -- assumes equal and opposite)
+Uo = 20.0  !Sets the magnitude of the top and bottom plate velocities (Couette flow -- assumes equal and opposite)
 Ttop(1) = 300.15, 95.0  !Currently this should be (temperature, relative humidity) (used in DNS)
 Tbot(1) = 300.15, 100.0  !Currently this should be (temperature, relative humidity) (used in DNS)
 
@@ -58,29 +58,29 @@ psurf = 101325  !Pa -- nominal surface pressure, for use in the definition of po
 ugcont = 0.0   !The initial u-velocity in the field
 vgcont = 0.0   !The initial v-velocity
 
-dpdx = -0.69325  !The pressure gradient for channel flow (gets put into u_geo for DNS)
+dpdx = -0.0013  !The pressure gradient for channel flow (gets put into u_geo for DNS)
 
-zi = 0.04  !This has to do with grid stretching; make equal to zl for Couette/channel
-zl = 0.04 
-xl = 0.251327  !2*pi*zl
-yl = 0.125664  !2*pi*zl
+zi = 10  !This has to do with grid stretching; make equal to zl for Couette/channel
+zl = 20.48 
+xl = 51.20  !2*pi*zl
+yl = 51.20  !2*pi*zl
 
-zw1 = 0.00008  !The first grid point
+zw1 = 0.0300008  !The first grid point
 /
 
 !Set the paths for code I/O. Must be on the scratch directory, not AFS!
 &path_names
-path_seed="/scratch365/drichte2/tutorial/case1/"
-path_part="/scratch365/drichte2/tutorial/case1/part.le.cou000"
-path_res="/scratch365/drichte2/tutorial/case1/u.le.cou000"
-path_sav="/scratch365/drichte2/tutorial/case1/"
-path_his="/scratch365/drichte2/tutorial/case1/"
-path_viz_xy="/scratch365/drichte2/tutorial/case1/"
-path_viz_xz="/scratch365/drichte2/tutorial/case1/"
-path_viz_yz="/scratch365/drichte2/tutorial/case1/"
-path_stuf="/scratch365/drichte2/tutorial/case1/"
-path_ran="/scratch365/drichte2/tutorial/case1/u.le.cou000"
-path_histog="/scratch365/drichte2/tutorial/case1/"
+path_seed="/scratch365/tpeng2/NTLP-SD/origtest1/"
+path_part="/scratch365/tpeng2/NTLP-SD/origtest1/part.le.cou000"
+path_res="/scratch365/tpeng2/NTLP-SD/origtest1/u.le.cou000"
+path_sav="/scratch365/tpeng2/NTLP-SD/origtest1/"
+path_his="/scratch365/tpeng2/NTLP-SD/origtest1/"
+path_viz_xy="/scratch365/tpeng2/NTLP-SD/origtest1/"
+path_viz_xz="/scratch365/tpeng2/NTLP-SD/origtest1/"
+path_viz_yz="/scratch365/tpeng2/NTLP-SD/origtest1/"
+path_stuf="/scratch365/tpeng2/NTLP-SD/origtest1/"
+path_ran="/scratch365/tpeng2/NTLP-SD/origtest1/u.le.cou000"
+path_histog="/scratch365/tpeng2/NTLP-SD/origtest1/"
 /
 
 
