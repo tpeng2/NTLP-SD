@@ -1257,7 +1257,9 @@ c       -----------------
         do ix =1,nnx
         do iy = iys,iye
            sigm_s(ix,iy,iz) = 2.0*e(ix,iy,iz)/3.0
+           if (nscl==3) then
            vis_ss(ix,iy,iz) = vis_s(ix,iy,3,iz)
+           end if
            sigm_sdx(ix,iy,iz) =  sigm_s(ix,iy,iz)       !for xderiv
            sigm_sdy(ix,iy,iz) =  sigm_s(ix,iy,iz)       !for yderiv
 c       --------------------
@@ -2756,8 +2758,8 @@ c     Now fill the ext arrays with the recieved buffers:
           kuvpts(2) = 1
           kuvpts(3) = 1
        elseif (kuvpts(3) .LT. 0) then 
-          first = 0
-          last = 0
+          first = 1
+          last = 1
        elseif (kuvpts(3) == 2) then 
           first = 2
           last = 5
@@ -2769,8 +2771,8 @@ c     Now fill the ext arrays with the recieved buffers:
           kuvpts(5) = nnz
           kuvpts(6) = nnz
        elseif (kuvpts(3) .GT. nnz) then
-          first = 0
-          last = 0
+          first = 1
+          last = 1
        !Between 2nd to last and last cell center at top
        elseif (kuvpts(3) == nnz-1) then
           first = 3
