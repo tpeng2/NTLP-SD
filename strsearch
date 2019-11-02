@@ -1,3 +1,4 @@
 #!/bin/bash
 SEARCHSTR=$1
-egrep -n $SEARCHSTR  ./Subroutines/*.F ./Modules/*.F
+SSPATH=${2:-.}
+egrep -n $SEARCHSTR  $SSPATH/Subroutines/*.F $SSPATH/Modules/*.F
