@@ -1,4 +1,5 @@
-# NTLP (NCAR Turbulence with Lagrangian Particles)
+# NTLP-SD (NCAR Turbulence with Lagrangian Particles)
+==> SuperDroplet Version
 
 ## Compilation
 To build on the CRC machines you must run the following commands:
