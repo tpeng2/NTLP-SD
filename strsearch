@@ -1,0 +1,3 @@
+#!/bin/bash
+SEARCHSTR=$1
+egrep -n $SEARCHSTR  ./Subroutines/*.F ./Modules/*.F
