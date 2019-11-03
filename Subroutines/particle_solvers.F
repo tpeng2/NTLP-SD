@@ -7,7 +7,6 @@
       include 'mpif.h'
 
       integer :: istage,ierr,it
-      real :: pi
       real :: denom,dtl,sigma
       integer :: ix,iy,iz
       real :: Rep,diff(3),diffnorm,corrfac,myRep_avg
@@ -89,7 +88,6 @@
          !Now advance the particle and position via RK3 (same as velocity)
         
          !Intermediate Values
-         pi = 4.0*atan(1.0)  
          diff(1:3) = part%vp - part%uf
          diffnorm = sqrt(diff(1)**2 + diff(2)**2 + diff(3)**2)
          Rep = 2.0*part%radius*diffnorm/nuf  
@@ -477,7 +475,7 @@
                !Gives initial guess into nonlinear solver
                !mflag = 0, has equilibrium radius; mflag = 1, no
                !equilibrium (uses itself as initial guess)
-               call rad_solver2(guess,mflag)
+               call rad_solver2(guess,mflag) !both are outputs
 
                if (mflag == 0) then
                 rt_start(1) = guess/part%radius
@@ -522,10 +520,10 @@
 
                endif
 
-               !Redimensionalize
-               part%radius = rt_zeroes(1)*part%radius
-               part%Tp = rt_zeroes(2)*part%Tp
-        end if
+           !Redimensionalize
+           part%radius = rt_zeroes(1)*part%radius
+           part%Tp = rt_zeroes(2)*part%Tp
+           end if
 
 
          !Intermediate Values
@@ -853,7 +851,7 @@
       use pars
       implicit none
 
-      real :: xp(3),vp(3),Tp,qinfp,rad_init,pi
+      real :: xp(3),vp(3),Tp,qinfp,rad_init
       integer :: idx
 
       if (.NOT. associated(first_particle)) then
@@ -870,7 +868,6 @@
          nullify(part%prev)
       end if
 
-      pi = 4.0*atan(1.0)
   
       part%xp(1:3) = xp(1:3)
       part%vp(1:3) = vp(1:3)
@@ -903,8 +900,12 @@
       use particles
       use pars
       implicit none
+      include 'mpif.h'
+      integer:: ierr
+      integer::itlocal,idx_tmp,procidx_tmp,tmp_reintro
       real :: top,bot
-
+      real :: xv,yv,zv,ran2,vinj,tmp_rpinit
+      type(particle),pointer :: tmp_part
       !Assumes domain goes from [0,xl),[0,yl),[0,zl]
       !Also maintain the number of particles on each proc
 
@@ -926,20 +927,55 @@
          !part%xp(3) = bot + (bot-part%xp(3))
          !part%vp(3) = -part%vp(3)
          !part => part%next
-         call destroy_particle
+        idx_tmp=part%pidx
+        procidx_tmp=part%procidx 
+        tmp_rpinit=part%m_s/(Sal/1000.0*4.0/3.0*pi*rhow)**(1/3)
+        call destroy_particle
+        tmp_part => part !store the location of current(next) particle         
+  
+        xv = ran2(iseed)*(xmax-xmin) + xmin 
+        yv = ran2(iseed)*(ymax-ymin) + ymin 
+         
+        !Inject the particles upwards: 
+        !get the initial vertical velocity: 
+        if (ivpran == 1) then 
+        vinj = ran2(iseed)*Vpmax 
+        else if (ivpran==0) then 
+        vinj = Vpmax 
+        end if 
+        zv = radius_init !dummy variable, will be replaced by random rp 
+        !10/1/2018 Tianze 
+        call create_particle((/xv,yv,zv/),(/0.0,0.0,vinj/), 
+     +                     Tbot(1), idx_tmp,procidx_tmp,tmp_rpinit) 
+c       part%rp_init=rpinit 
+c       part%radius=part%rp_init 
+              !Tianze 8/13/15 !Brian 7/29/14 Currently ignoring Tp and
+              !qinfp 
+!       ! Get particle initial radius now
+        num_reintro = num_reintro +1  
+        !after creating new particle to the beginning, the pointer
+        !'part' 
+        !is at the location first partcle. So return the particle to the 
+        !formerly stored location. 
+         
+        part => tmp_part !New particle points to current position
       else
          part => part%next
       end if
 
       end do
 
+      ! total reintro tnumpart
+      call mpi_allreduce(num_reintro,tmp_reintro,1,mpi_integer,mpi_sum,
+     +       mpi_comm_world,ierr)
+      tot_reintro = tot_reintro+tmp_reintro
 
       end subroutine particle_bcs_nonperiodic
       subroutine particle_bcs_periodic
       use particles
       use pars
       implicit none 
-
+      include 'mpif.h'
       !Assumes domain goes from [0,xl),[0,yl),[0,zl] 
       !Also maintain the number of particles on each proc
       
@@ -3213,11 +3249,14 @@ c        part%qinf = 0.0 ! Brian 7/14/14
       implicit none
       include 'mpif.h' 
       integer :: values(8)
-      integer :: idx
+      integer :: idx,indrp,icls
+      integer :: Nr_ran
       real :: xv,yv,zv,ran2,deltaz
       real :: maxx,maxy,maxz
       real :: xp_init(3),R0,X0,rad_init,vol_init
-
+      real :: rpnewtmp,mwnewtmp
+      real :: pmass,totpmass
+      real :: sumbuf_tnumgen(Nrp)
       !Create the seed for the random number generator:
       call date_and_time(VALUES=values)
       iseed = -(myid+values(8)+values(7)+values(6))
@@ -3240,13 +3279,18 @@ c        part%qinf = 0.0 ! Brian 7/14/14
       maxx=0.0
       maxy=0.0
       maxz=0.0
+
+      
+
+      !Method 1: generate particle with fixed tnumpart 
+      if (ifixnumpart==1) then
       do idx=1,numpart
       xv = ran2(iseed)*(xmax-xmin) + xmin
       yv = ran2(iseed)*(ymax-ymin) + ymin
       zv = ran2(iseed)*(zi-zw1) + zw1
       xp_init = (/xv,yv,zv/)
 
-
+      if(iparsdefault==1) then
       !Exponential distribution of droplet size to match Shima et al.
       !(2009) test case
       R0 = 30.531e-6
@@ -3254,12 +3298,54 @@ c        part%qinf = 0.0 ! Brian 7/14/14
 
       vol_init = -X0*log(1.0-ran2(iseed))
       rad_init = (vol_init/(pi2*2.0/3.0))**(1.0/3.0)
-
+      endif !iparsdefault ==1, Tianze 11/03/19
       rad_init = radius_init   !From params file -- all particles identical
-
+      ! Note: vp_init, Tp_init, qf_init are read from params.f90,
+      ! Tianze 11/03/19
       call create_particle(xp_init,vp_init,
      +         Tp_init,qf_init,rad_init,idx) 
       end do
+      
+      elseif(ifixnumpart==2) then
+
+      ! April 2019, change to have a constant water mass
+      !Method 2, assign mass to each core, and then 
+      ! set numpart = 0
+      numpart = 0
+      idx=0
+      ! Begin do loop for generating numpart
+      ! massfrac is read from params.f90, Tianze 11/03/2019
+      totpmass=massfrac*(rhoa*xl*yl*zl)
+      pmass=totpmass/numprocs
+
+      do while(pmass.ge.0.0)
+       idx=idx+1
+       !generate random (x,y,z) locations
+       xv = ran2(iseed)*(xmax-xmin) + xmin
+       yv = ran2(iseed)*(ymax-ymin) + ymin
+       zv = ran2(iseed)*(zl-zw1) + zw1
+       !Brian 2/20/15 No droplets in viscous region
+       ! draw one particle size
+       ! April 2019, add iszcls selection in create_random_partsize
+       call create_random_partsize(rpnewtmp,indrp)
+       ! calculate particle (water) mass
+       mwnewtmp=rhow*4.0/3.0*pi*rpnewtmp**3.0
+       ! create particle with this radius 
+       call create_particle((/xv,yv,zv/),(/0.01,0.0,0.0/),
+     +                   Tbot(1),idx,myid,rpnewtmp)
+       ! add one more to particle number in this processor
+       numpart=numpart + 1
+       ! calculate remaining mass
+       pmass=pmass-mwnewtmp
+       !for debug below
+          if(myid==1 .and. idebug.ne.0)then
+            write(*,*)'myid1,rpnewtmp=',rpnewtmp,',mwnewtmp=',mwnewtmp
+            write(*,*)'myid1,pmass=',pmass,'idx=',idx,'numpart=',numpart
+          endif
+      end do
+      endif !ifixnumpart, Tianze 11/03/19, integrated from NTLP-pfluxpoly
+
+
 
       partTsrc = 0.0
       partTsrc_t = 0.0
@@ -3281,7 +3367,6 @@ c        part%qinf = 0.0 ! Brian 7/14/14
 
       integer :: blcts(3),types(3)
       integer :: ierr
-      real :: pi
       integer(kind=MPI_ADDRESS_KIND) :: extent,lb
       integer(kind=MPI_ADDRESS_KIND) :: extent2,lb2,displs(3)
       integer :: num_reals,num_integers,num_longs
@@ -3584,6 +3669,7 @@ c        part%qinf = 0.0 ! Brian 7/14/14
       integer :: myp,totalp 
       integer :: iproc,i,pidxmax
       type(particle), allocatable :: readbuf(:)
+      type(particle), pointer :: tmp_part
 
       if (myid==0) write(*,7000) path_part 
  7000 format(' READING PARTICLE DATA FROM  ',a80)
@@ -3660,10 +3746,8 @@ c        part%qinf = 0.0 ! Brian 7/14/14
       use pars
       implicit none
       integer :: i,ipt,jpt,kpt
-      real :: rhop,pi
+      real :: rhop
 
-
-      pi   = 4.0*atan(1.0)
 
       rhop = (part%m_s+4.0/3.0*pi*part%radius**3*rhow)/
      +                           (4.0/3.0*pi*part%radius**3)

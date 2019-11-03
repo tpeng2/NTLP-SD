@@ -554,3 +554,4 @@ Contains
     Deallocate (all_distances)
   End Subroutine n_nearest_to_brute_force
 End Module kd_tree
+ 

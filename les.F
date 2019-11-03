@@ -5664,7 +5664,7 @@ c
 
          !Assuming tsfcc(2) is giving RH:
 
-         RHB = surf_RH/100.0
+         RHB = surf_RH/100.0  !Conflicted !! Tianze 11/2/2019
 
          tsfcc(2) = RHB*Mw/Ru/tsfcc(1)*mod_Magnus(tsfcc(1))/rhoa
 

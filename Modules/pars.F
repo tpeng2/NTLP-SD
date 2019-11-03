@@ -1,6 +1,9 @@
 c     ----------------------------------------------------------------------
       module pars
 c     ----------------------------------------------------------------------
+      ! Define constant
+      real :: pi
+      ! Time step parameters
       integer :: iti,itmax,imean,ihst,itape
       integer :: itstr,it_his,it_viz,i_viz
 
@@ -10,13 +13,17 @@ c     ----------------------------------------------------------------------
      +     icouple,iTcouple,iHcouple,ievap,ifields,ilin,ineighbor,
      +     icoalesce,ipart_method,ipartdiff,isfs,iexner
 c     
+      integer :: iparsdefault ! for default setting
+      integer :: ifixnumpart ! for fixed particle numbers
+      !For particle generation
+      integer :: iSSGF,ivpran,irpsmp,iFnumsmp,iszcls,impscl,impmnl
 c     -------- j_recl = record length in "bytes" for history file
 c     k8     = kind parameter for integers in mpi_io routines
 c     
       integer, parameter :: j_recl=4, k8=8
 
       integer, parameter :: nscl = 2, nvar = (4+nscl)
-      integer, parameter :: maxnx=128,maxny=128,maxnz=256
+      integer, parameter :: maxnx=128,maxny=128,maxnz=128
       integer, parameter :: maxnz1=maxnz+1,
      + maxnz2=maxnz+2,maxnx2=maxnx+2,maxny2=maxny+2
 
@@ -31,6 +38,14 @@ c
       real :: Sal,Ms,Gam,Ion,Os
       real :: rhow,nuf 
       real :: CpaCpp,Cpa,Cpp,Pra,Sc,Mw,Ru,rhoa,Rd
+      real :: m_s, m_p
+      
+      !Number-distribution of particle sizes
+      integer :: Nrp
+      ! SSGF for subroutine create_random_radius
+      real,allocatable :: Sn(:)
+      real,allocatable :: Snscl(:),rpcrop(:),CDF(:)
+      
 
 c     
 c     ------------ leave following definitions as is
@@ -48,7 +63,7 @@ c     ----------------------------------------------------------------------
      +     nviz_z, nviz_y, 
      +     nviz_x, nviz_s,
      +     kfile, jfile, ibcl, ibcu,
-     +     igrdr, imach, itn, it_his_nxt, it_viz_nxt
+     +     igrdr, ichannel,  imach, itn, it_his_nxt, it_viz_nxt
       logical ::    mnout, micut, mtape, mhis, msave,mtrans,
      +     l_root, l_debug, msave_v, mviz
 c     ----------------------------------------------------------------------
@@ -133,9 +148,18 @@ c     --- SFS velocity calculation ---------
       real, allocatable :: sigm_sdxext(:,:,:),sigm_sdyext(:,:,:)
       real, allocatable :: sigm_sdzext(:,:,:)
       real, allocatable :: vis_ss(:,:,:),vis_sext(:,:,:) 
+!     --- Count reintroduced particle
+      integer :: num_reintro,tot_reintro,his_reintro !Tianze 9/11/15
 
       integer :: particletype,pad_diff
-      integer :: numpart,tnumpart,ngidx
+      integer :: numpart,tnumpart,ngidx,massfrac
+!     --- 10-m wind speed for SSGF only
+      integer :: U10
+!     --- manual size input, defined in parameter files
+!     --- for 2-3 sizes
+      integer :: phmt1,phmt2,phmt3
+!     --- for 6 sizes
+      integer :: phm1, phm2,phm3,phm4,phm5,phm6
       integer :: iseed
       integer :: num100=0, num1000=0, numimpos=0
       integer :: tnum100, tnum1000, tnumimpos
@@ -153,6 +177,14 @@ c     --- SFS velocity calculation ---------
       real :: hist_rad(histbins+2)
       real :: bins_rad(histbins+2)      
 
+
+      !for smallest rp incremental
+      real :: rp_inc 
+      !Following three lines are all set in the input file 9/18/18
+      real,allocatable :: rpsmp(:)  !candidate size array
+      integer,allocatable::irpind(:) !size index
+      real :: rpmax,rpmed,rpmin,Vpmax
+      
       
       !REMEMBER: IF ADDING ANYTHING, MUST UPDATE MPI DATATYPE!
       type :: particle
@@ -526,6 +558,10 @@ c       nscl  .ge. 1   number of scalars to be followed set in parameter stateme
 c                      change entries in sr. init, and sr. suft for surface bc's
 c
 c -------------------------------------------------------------------------------
+c    ---------- Define PI()--------------
+
+      pi = 4.0*atan(1.0)
+
 c
 c ---------- initialize MPI, get myid, numprocs, 
 c            test if on root process
@@ -831,7 +867,7 @@ c
       if (myid==5) write(*,*) 'time partdiff:', t_f - t_s
       end if
 
-      call radius_histogram
+      !call radius_histogram
      
       call get_max
       call get_dt

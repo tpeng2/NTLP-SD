@@ -8,7 +8,6 @@ c
 c
       real :: RHT,RHB,mod_Magnus
 
-      pi   = 4.0*atan(1.0)
       pi2  = 2.0*pi
       bfac = 1.0
       if(ibuoy.eq.0) bfac = 0.
@@ -133,8 +132,13 @@ c
             z(iz) = dz*float(iz) + zwstrt
          enddo
       else
-         call vgrid(zw1,zi,zl,nnz,z(0),l_root,l_debug)
-       !call vgrid_channel(zw1,zi,zl,nnz,z(0),l_root,l_debug)
+       if(ichannel.eq.1) then
+       call vgrid_channel(zw1,zi,zl,nnz,z(0),l_root,l_debug)
+       else if (ichannel .eq.0) then
+       call vgrid(zw1,zi,zl,nnz,z(0),l_root,l_debug)
+       else if (ichannel .eq.2) then
+       call vgrid_channel_fstrm(zw1,zi,zl,nnz,z(0),l_root,l_debug) !Tianze 9/1/15
+       end if
       endif
 c
       call get_dz

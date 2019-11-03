@@ -7,12 +7,12 @@
       character(48) :: label
       character(180) :: params_dir
       namelist /step_params/ iti,itmax,imean,ihst,itape,
-     +                       itstr,it_his,it_viz,i_viz,itn
+     +         itstr,it_his,it_viz,i_viz,itn
 
       namelist /grid_params/ ncpu_s, Uo, Ttop, Tbot,
      +         qstar, tsfcc, ugcont, vgcont,
      +         zi, zl, xl, yl, zw1, dpdx,
-     +         cfl,dt_new,surf_RH,psurf
+     +         cfl,dt_new,surf_RH,psurf,ichannel
 
       namelist /path_names/ path_seed,path_part,path_res,
      +         path_sav,path_his,path_viz_xy,path_viz_xz,
@@ -23,7 +23,10 @@
      +         method,idebug,iz_space,ivis0,ifix_dt,new_vis,iDNS,
      +         icouple,iTcouple,iHcouple,ievap,ifields,ilin,
      +         ineighbor,icoalesce,ipart_method,
-     +         ipartdiff,isfs,iexner
+     +         ipartdiff,isfs,iexner,impscl,impmnl,iparsdefault,
+     +         ifixnumpart,iszcls,iSSGF,ivpran,irpsmp,iFnumsmp,iszcls
+
+
 
 
       namelist /constants/ rhoa, nuf, Cpa, Pra, Sc,
