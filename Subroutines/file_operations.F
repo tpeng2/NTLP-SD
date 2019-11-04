@@ -30,7 +30,7 @@
 
 
       namelist /constants/ rhoa, nuf, Cpa, Pra, Sc,
-     +         tnumpart,mult_init,rhow,part_grav,
+     +         tnumpart,mult_init,massfrac,rhow,part_grav,
      +         Cpp,Mw,Ms,Ru,Gam,Ion,Os,Sal,Rd,
      +         radius_init,
      +         grav, t00,fcor,zo,
