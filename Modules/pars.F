@@ -653,34 +653,59 @@ c
       if (it == 1) numpart = 0
       part => first_particle
       do while (associated(part))
+      !particle sample 1
       if (part%pidx == 1 .and. part%procidx == 0) then
-      write(*,'(a7,4e15.6)') 'xp1:  ',time,part%xp(1:3)
-      write(*,'(a7,4e15.6)') 'vp1:  ',time,part%vp(1:3)
-      write(*,'(a7,4e15.6)') 'uf1:  ',time,part%uf(1:3)
-      write(*,'(a7,2e15.6)') 'Tp1:  ',time,part%Tp
-      write(*,'(a7,2e15.6)') 'Tf1:  ',time,part%Tf
-      write(*,'(a7,2e15.6)') 'rad1: ',time,part%radius 
-      write(*,'(a7,2e15.6)') 'qinf1:',time,part%qinf 
-      write(*,'(a7,2e15.6)') 'qstr1:',time,part%qstar 
-      write(*,'(a7,e15.6,i)') 'mult1:',time,part%mult
-
+      write(*,'(a6,4e15.6)') 'xp1:  ',time,part%xp(1:3)
+      write(*,'(a6,4e15.6)') 'vp1:  ',time,part%vp(1:3)
+      write(*,'(a6,4e15.6)') 'uf1:  ',time,part%uf(1:3)
+      write(*,'(a6,2e15.6)') 'Tp1:  ',time,part%Tp
+      write(*,'(a6,2e15.6)') 'Tf1:  ',time,part%Tf
+      write(*,'(a6,2e15.6)') 'rad1: ',time,part%radius 
+      write(*,'(a6,2e15.6)') 'qinf1:',time,part%qinf 
+      write(*,'(a6,2e15.6)') 'qstr1:',time,part%qstar 
+      write(*,'(a6,e15.6,i)') 'mult1:',time,part%mult
       end if
 
+      !particle sample 2
+      if (part%pidx == 2 .and. part%procidx == 0) then
+      write(*,'(a6,4e15.6)') 'xp1:  ',time,part%xp(1:3)
+      write(*,'(a6,4e15.6)') 'vp1:  ',time,part%vp(1:3)
+      write(*,'(a6,4e15.6)') 'uf1:  ',time,part%uf(1:3)
+      write(*,'(a6,2e15.6)') 'Tp1:  ',time,part%Tp
+      write(*,'(a6,2e15.6)') 'Tf1:  ',time,part%Tf
+      write(*,'(a6,2e15.6)') 'rad1: ',time,part%radius 
+      write(*,'(a6,2e15.6)') 'qinf1:',time,part%qinf 
+      write(*,'(a6,2e15.6)') 'qstr1:',time,part%qstar 
+      write(*,'(a6,e15.6,i)') 'mult1:',time,part%mult
+      end if
+
+      !particle sample 3
+      if (part%pidx == 1 .and. part%procidx == 1) then
+      write(*,'(a6,4e15.6)') 'xp1:  ',time,part%xp(1:3)
+      write(*,'(a6,4e15.6)') 'vp1:  ',time,part%vp(1:3)
+      write(*,'(a6,4e15.6)') 'uf1:  ',time,part%uf(1:3)
+      write(*,'(a6,2e15.6)') 'Tp1:  ',time,part%Tp
+      write(*,'(a6,2e15.6)') 'Tf1:  ',time,part%Tf
+      write(*,'(a6,2e15.6)') 'rad1: ',time,part%radius 
+      write(*,'(a6,2e15.6)') 'qinf1:',time,part%qinf 
+      write(*,'(a6,2e15.6)') 'qstr1:',time,part%qstar 
+      write(*,'(a6,e15.6,i)') 'mult1:',time,part%mult
+      end if
       part => part%next
 
       if (it == 1) numpart = numpart + 1
       end do
       if(myid==0) then
-       write(*,'(a15,e15.6,i12)') 'time,tnumpart:',time,tnumpart
-       write(*,'(a18,e15.6,i12)') 'time,tnum_destroy:',time,tnum_destroy
-       write(*,'(a15,3e15.6)') 'radmin,radmax',time,radmin,radmax
-       write(*,'(a15,3e15.6)') 'tempmin,tempmax',time,tempmin,tempmax
-       write(*,'(a15,3e15.6)') 'qmin,qmax',time,qmin,qmax
-       write(*,'(a15,2e15.6)') 'time,radavg',time,radavg
-       write(*,'(a15,3e15.6)'),'time,100,1000',time,tnum100,tnum1000
-       write(*,'(a15,2e15.6)'),'time,impos', time,tnumimpos
-       write(*,'(a15,2e15.6)'), 'time,actnum',time,tactnum
-       write(*,'(a15,2e15.6)'), 'time,denum',time,tdenum
+      write(*,'(a15,e15.6,i12)')'tnumpart:      ',time,tnumpart
+      write(*,'(a15,e15.6,i12)')'tnum_des:      ',time,tnum_destroy
+      write(*,'(a15,3e15.6)')   'radmin,radmax: ',time,radmin,radmax
+      write(*,'(a15,3e15.6)')   'tempmin,tempma:',time,tempmin,tempmax
+      write(*,'(a15,3e15.6)')   'qmin,qmax:     ',time,qmin,qmax
+      write(*,'(a15,2e15.6)')   'radavg:        ',time,radavg
+      write(*,'(a15,e15.6,2i12)')'t,100,1000:    ',time,tnum100,tnum1000
+      write(*,'(a15,e15.6,i12)')  'impos:         ',time,tnumimpos
+      write(*,'(a15,e15.6,i12)')  'actnum:        ',time,tactnum
+      write(*,'(a15,e15.6,i12)')  'denum:         ',time,tdenum
       end if
 
       if(it .ge. new_vis .and. ivis0 .eq. 1) then

@@ -459,12 +459,12 @@ c           u(ix,iy,iz) = ug(iz) - ugal
             !--- initialize Temp fileds with inversion layer specified 
             if(z(iz) .le. z_lower) then
               t(ix,iy,1,iz) = t_lower
+              ! Add "bubble" to test cloud model
               if (itempfld==1) then
-                  !Add "bubble" to test cloud model
-                  t(ix,iy,1,iz) = t(ix,iy,1,iz) + 0.1*
-     +            exp( -( (dx*(ix-1)-500.0)/200.0 )**2 
-     +                 -( (dy*(iy-1)-500.0)/200.0 )**2 )*
-     +            exp (-zz(iz)/100.0)
+                t(ix,iy,1,iz) = t(ix,iy,1,iz) + 0.1*
+     +          exp( -( (dx*(ix-1)-500.0)/200.0 )**2 
+     +               -( (dy*(iy-1)-500.0)/200.0 )**2 )*
+     +          exp (-zz(iz)/100.0)
               endif
             elseif(z(iz) .ge. z_upper) then
               t(ix,iy,1,iz) = t_upper + (zz(iz+1) - z_upper)*dtdzf(1)
@@ -493,6 +493,12 @@ c           u(ix,iy,iz) = ug(iz) - ugal
            enddo 
          enddo 
       enddo
+      ! Report the completion of LES field initialization
+      if(myid==0)then
+         write(*,*) 'The flow field is initialized.' 
+         ! Add "bubble" to test cloud model
+         if(itempfld==1)write(*,*)'Gaussian T bubble is initialed.'
+      end if
 c
 c ------------- set initial random field to be
 c               divergence free
