@@ -78,8 +78,9 @@ c
 
          !Assuming tsfcc(2) is giving RH:
 
+         surf_RH=tsfcc(2)
          RHB = surf_RH/100.0
-
+         !Convert to specific huminity
          tsfcc(2) = RHB*Mw/Ru/tsfcc(1)*mod_Magnus(tsfcc(1))/rhoa
 
          if (myid==0) then

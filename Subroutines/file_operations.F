@@ -12,7 +12,7 @@
       namelist /grid_params/ ncpu_s, Uo, Ttop, Tbot,
      +         qstar, tsfcc, ugcont, vgcont,
      +         zi, zl, xl, yl, zw1, dpdx,
-     +         cfl,dt_new,surf_RH,psurf,ichannel
+     +         cfl,dt_new,psurf,ichannel
 
       namelist /path_names/ path_seed,path_part,path_res,
      +         path_sav,path_his,path_viz_xy,path_viz_xz,
