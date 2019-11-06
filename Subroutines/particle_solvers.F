@@ -380,18 +380,17 @@
       real :: mod_Magnus,tmp_coeff
 
 
-      if (it .lt. 300) then
-!         ievap = 0
-!         icoalesce = 0
-!         icouple = 0
+      ! --- Release coupling and coalecse conditions if needed
+      ! --- After a certain time steps, do whatever is assigned in
+      ! --- params.file
+
+      if (it .lt. itcplbegin) then
+         icouple = 0
          iTcouple = 0
          iHcouple = 0
-      else
-!         ievap = 1
-         iTcouple = 1
-         iHcouple = 1
-!         icoalesce = 1
       end if
+      
+      if (it.lt.itclsbegin) icoalesce=0
 
 
       !First fill extended velocity field for interpolation

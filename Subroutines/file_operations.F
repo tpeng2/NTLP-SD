@@ -7,7 +7,7 @@
       character(48) :: label
       character(180) :: params_dir
       namelist /step_params/ iti,itmax,imean,ihst,itape,
-     +         itstr,it_his,it_viz,i_viz,itn
+     +         itstr,it_his,it_viz,i_viz,itn,itcplbegin,itclsbegin
 
       namelist /grid_params/ ncpu_s, Uo, Ttop, Tbot,
      +         qstar, tsfcc, ugcont, vgcont,

@@ -6,6 +6,8 @@ c     ----------------------------------------------------------------------
       ! Time step parameters
       integer :: iti,itmax,imean,ihst,itape
       integer :: itstr,it_his,it_viz,i_viz
+      integer :: itcplbegin !time when 2-way coupling begins
+      integer :: itclsbegin !time when particle coalesce begins
 
       integer :: ismlt,ifree,iradup,
      +     iupwnd,ibuoy,ifilt,itcut,isubs,ibrcl,iocean,method,
