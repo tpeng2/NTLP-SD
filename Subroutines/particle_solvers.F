@@ -363,6 +363,7 @@
       include 'mpif.h'
 
       integer :: ierr,it
+      integer :: icpl_in,iTcpl_in,iHcpl_in,icls_in
       real :: tmpbuf(5),tmpbuf_rec(5),tmp_reintro
       real :: myradavg,myradmax,myradmin,mytempmax,mytempmin
       real :: myqmin,myqmax
@@ -380,6 +381,11 @@
       real :: mod_Magnus,tmp_coeff
 
 
+      ! --- Record the flag used in params.f90
+      icpl_in = icouple
+      iTcpl_in = iTcouple
+      iHcpl_in = iHcouple
+      icls_in = icoalesce
       ! --- Release coupling and coalecse conditions if needed
       ! --- After a certain time steps, do whatever is assigned in
       ! --- params.file
@@ -388,9 +394,17 @@
          icouple = 0
          iTcouple = 0
          iHcouple = 0
+      else
+         icouple=icpl_in
+         iTcouple=iTcpl_in
+         iHcouple=iHcpl_in
       end if
       
-      if (it.lt.itclsbegin) icoalesce=0
+      if (it.lt.itclsbegin) then
+         icoalesce=0
+      else 
+         icoalesce=icls_in
+      end if
 
 
       !First fill extended velocity field for interpolation

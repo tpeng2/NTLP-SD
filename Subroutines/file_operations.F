@@ -27,8 +27,6 @@
      +         ifixnumpart,iszcls,iSSGF,ivpran,irpsmp,iFnumsmp,iszcls
 
 
-
-
       namelist /constants/ rhoa, nuf, Cpa, Pra, Sc,
      +         tnumpart,mult_init,massfrac,rhow,part_grav,
      +         Cpp,Mw,Ms,Ru,Gam,Ion,Os,Sal,Rd,
