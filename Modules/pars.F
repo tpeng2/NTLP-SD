@@ -12,7 +12,8 @@ c     ----------------------------------------------------------------------
       integer :: ismlt,ifree,iradup,
      +     iupwnd,ibuoy,ifilt,itcut,isubs,ibrcl,iocean,method,
      +     idebug,iz_space,ivis0,ifix_dt,new_vis,iDNS,
-     +     icouple,iTcouple,iHcouple,ievap,ifields,ilin,ineighbor,
+     +     icouple,iTcouple,iHcouple,ievap,ifields,isurfUlog,
+     +     itempfld,ilin,ineighbor,
      +     icoalesce,ipart_method,ipartdiff,isfs,iexner
 c     
       integer :: iparsdefault ! for default setting
@@ -669,17 +670,18 @@ c
 
       if (it == 1) numpart = numpart + 1
       end do
-      if (myid==0) write(*,*) 'time,tnumpart:',time,tnumpart
-      if (myid==0) write(*,*) 'time,tnum_destroy:',time,tnum_destroy
-      if (myid==0) write(*,*) 'radmin, radmax',time,radmin,radmax
-      if (myid==0) write(*,*) 'tempmin, tempmax',time,tempmin,tempmax
-      if (myid==0) write(*,*) 'qmin, qmax',time,qmin,qmax
-      if (myid==0) write(*,*) 'time, radavg',time,radavg
-      if (myid==0) write(*,*),'time,100,1000,impos',time,tnum100,
-     + tnum1000,tnumimpos
-      if (myid==0) write(*,*), 'time,actnum',time,tactnum
-      if (myid==0) write(*,*), 'time,denum',time,tdenum
-
+      if(myid==0) then
+       write(*,'(a15,e15.6,i12)') 'time,tnumpart:',time,tnumpart
+       write(*,'(a18,e15.6,i12)') 'time,tnum_destroy:',time,tnum_destroy
+       write(*,'(a15,3e15.6)') 'radmin,radmax',time,radmin,radmax
+       write(*,'(a15,3e15.6)') 'tempmin,tempmax',time,tempmin,tempmax
+       write(*,'(a15,3e15.6)') 'qmin,qmax',time,qmin,qmax
+       write(*,'(a15,2e15.6)') 'time,radavg',time,radavg
+       write(*,'(a15,3e15.6)'),'time,100,1000',time,tnum100,tnum1000
+       write(*,'(a15,2e15.6)'),'time,impos', time,tnumimpos
+       write(*,'(a15,2e15.6)'), 'time,actnum',time,tactnum
+       write(*,'(a15,2e15.6)'), 'time,denum',time,tdenum
+      end if
 
       if(it .ge. new_vis .and. ivis0 .eq. 1) then
           ivis = 1

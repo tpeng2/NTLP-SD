@@ -44,52 +44,43 @@ c ---------- if stretched grid specify location of first point
 c
          zw1 = -0.5
       else
+        !--- if (icoean.ne.1)
          gcp     = grav/Cpa
          batag   = bfac*grav/t00
          fcor_h  = 0.0
 
          !!!If doing DNS, BCs are set somewhat differently than when doing LES
          if (iDNS .eq. 1) then
-
-         !Get BCs of temperature in Celsius for use in specific expressions
-         topC=(Ttop(1)-273.15)
-         botC=(Tbot(1)-273.15)  
-         
-         !Normalize the RH given in input file
-         RHT = Ttop(2)/100.0 
-         RHB = Tbot(2)/100.0
-
-         !Convert RH given in input file into specific humidity
-         Ttop(2) =  RHT*Mw/Ru/Ttop(1)*610.94*
-     +               EXP(17.6257*topC/(topC+243.04))/rhoa
-         Tbot(2) =  RHB*Mw/Ru/Tbot(1)*610.94*
-     +               EXP(17.6257*botC/(botC+243.04))/rhoa
-
-         wtsfc(1) = qstar(1)
-         wtsfc(2) = qstar(2)
+           !Get BCs of temperature in Celsius for use in specific expressions
+           topC=(Ttop(1)-273.15)
+           botC=(Tbot(1)-273.15)   
+           !Normalize the RH given in input file
+           RHT = Ttop(2)/100.0 
+           RHB = Tbot(2)/100.0
+           !Convert RH given in input file into specific humidity
+           Ttop(2) =  RHT*Mw/Ru/Ttop(1)*610.94*
+     +                 EXP(17.6257*topC/(topC+243.04))/rhoa
+           Tbot(2) =  RHB*Mw/Ru/Tbot(1)*610.94*
+     +                 EXP(17.6257*botC/(botC+243.04))/rhoa
+           wtsfc(1) = qstar(1)
+           wtsfc(2) = qstar(2)
 
          else !(doing LES)
-c
-         !qstar specified in input file for isfc = 0
-        
-         wtsfc = qstar
+           !qstar specified in input file for isfc = 0
+           wtsfc = qstar
 
-         !tsfcc specified in input file for isfc = 1
+           !tsfcc specified in input file for isfc = 1
 
-         !Assuming tsfcc(2) is giving RH:
+           !Assuming tsfcc(2) is giving RH:
+           surf_RH=tsfcc(2)
+           RHB = surf_RH/100.0
+           !Convert to specific huminity
+           tsfcc(2) = RHB*Mw/Ru/tsfcc(1)*mod_Magnus(tsfcc(1))/rhoa
 
-         surf_RH=tsfcc(2)
-         RHB = surf_RH/100.0
-         !Convert to specific huminity
-         tsfcc(2) = RHB*Mw/Ru/tsfcc(1)*mod_Magnus(tsfcc(1))/rhoa
-
-         if (myid==0) then
-         write(*,*) 'SURFACE HUMIDITY: %RH, q = ',surf_RH,tsfcc(2)
-         end if
-
-
-
-         end if
+           if (myid==0) then
+              write(*,*) 'SURFACE HUMIDITY: %RH, q = ',surf_RH,tsfcc(2)
+           end if
+      end if
 c
 c
          !Gradients of temperature and scalars above inversion (upper BC)
@@ -388,6 +379,7 @@ c
       use con_data
       use con_stats
       use particles
+      real :: hsurf_init
       real psi(nnx,iys:iye), psix(nnx,iys:iye),
      +     psiy(nnx,iys:iye,izs:izs), uxx(nnx,iys:iye),
      +     vyy(nnx,iys:iye,izs:izs),mod_Magnus,Ttmp
@@ -442,6 +434,7 @@ c        ug(iz)   = ugcont*(zz(iz)/zl)
 c
       izi = (50*nnz)/100
       zi  = z(izi)
+      if(myid==0) write(*,*)'The inversion layer initalized at ',zi,' m'
 c
       z_lower = zi - 50.0
       t_lower = 300.0
@@ -449,46 +442,37 @@ c
       t_upper = 308.0
       slope   = (t_upper - t_lower)/(z_upper - z_lower)
 c
-      do iz=izs,ize
-         do iy=iys,iye
+c     !--- assume surface layer at 50m 
+      hsurf_init=50
+       do iy=iys,iye
          do ix=1,nnx
+           do iz=izs,ize
+            !--- initialize (u,v,w,e) fileds 
             u(ix,iy,iz) = ugcont-ugal
 c           u(ix,iy,iz) = ug(iz) - ugal
+            if (z(iz).le.hsurf_init.and.zw1/zo.gt.1) then
+               u(ix,iy,iz)=u(ix,iy,iz)/log(hsurf_init/zo)*log(z(iz)/zo)
+            endif
             v(ix,iy,iz) = vgcont
             w(ix,iy,iz) = 0.0
             e(ix,iy,iz) = 0.0
-         enddo
-         enddo
-         if(z(iz) .le. z_lower) then
-           do iy=iys,iye
-           do ix=1,nnx
+            !--- initialize Temp fileds with inversion layer specified 
+            if(z(iz) .le. z_lower) then
               t(ix,iy,1,iz) = t_lower
-
-           !Add "bubble" to test cloud model
-!           t(ix,iy,1,iz) = t(ix,iy,1,iz) + 0.1*
-!     +     exp( -( (dx*(ix-1)-500.0)/200.0 )**2 
-!     +          -( (dy*(iy-1)-500.0)/200.0 )**2 )*
-!     +     exp (-zz(iz)/100.0)
-
-           enddo
-           enddo
-         elseif(z(iz) .ge. z_upper) then
-           do iy=iys,iye
-           do ix=1,nnx
+              if (itempfld==1) then
+                  !Add "bubble" to test cloud model
+                  t(ix,iy,1,iz) = t(ix,iy,1,iz) + 0.1*
+     +            exp( -( (dx*(ix-1)-500.0)/200.0 )**2 
+     +                 -( (dy*(iy-1)-500.0)/200.0 )**2 )*
+     +            exp (-zz(iz)/100.0)
+              endif
+            elseif(z(iz) .ge. z_upper) then
               t(ix,iy,1,iz) = t_upper + (zz(iz+1) - z_upper)*dtdzf(1)
-           enddo
-           enddo
-         else
-           do iy=iys,iye
-           do ix=1,nnx
+            else
               t(ix,iy,1,iz) = t_lower + slope*(zz(iz+1) - z_lower)
-           enddo
-           enddo
-         endif
-         do iy=iys,iye
-         do ix=1,nnx
-
-         !Make a constant q profile at RH based on surface temp:
+            endif ! for(z(i))
+            !--- initialize specific humidity fileds based on Temp.
+            !Make a constant q profile at RH based on surface temp:
             t(ix,iy,2,iz) = surf_RH/100.0*
      +      Mw/Ru/t_lower*mod_Magnus(t_lower)/rhoa
 
@@ -500,16 +484,13 @@ c           u(ix,iy,iz) = ug(iz) - ugal
 !            !Get temperature based on desired RH
 !            t(ix,iy,2,iz) = surf_RH/100.0*
 !     +      Mw/Ru/Ttmp*mod_Magnus(Ttmp)/rhoa
-
-
-            w(ix,iy,iz)   = 0.
             r1(ix,iy,iz)  = 0.
             r2(ix,iy,iz)  = 0.
             r3(ix,iy,iz)  = 0.
             r4(ix,iy,1,iz)= 0.
             r4(ix,iy,2,iz)= 0.
             r5(ix,iy,iz)  = 0.
-         enddo 
+           enddo 
          enddo 
       enddo
 c

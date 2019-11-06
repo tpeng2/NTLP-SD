@@ -21,8 +21,8 @@
       namelist /flags/ ismlt,ifree,isfc,iradup,
      +         iupwnd,ibuoy,ifilt,itcut,isubs,ibrcl,iocean,
      +         method,idebug,iz_space,ivis0,ifix_dt,new_vis,iDNS,
-     +         icouple,iTcouple,iHcouple,ievap,ifields,ilin,
-     +         ineighbor,icoalesce,ipart_method,
+     +         icouple,iTcouple,iHcouple,ievap,ifields,isurfUlog,
+     +         itempfld,ilin,ineighbor,icoalesce,ipart_method,
      +         ipartdiff,isfs,iexner,impscl,impmnl,iparsdefault,
      +         ifixnumpart,iszcls,iSSGF,ivpran,irpsmp,iFnumsmp,iszcls
 
