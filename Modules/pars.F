@@ -668,28 +668,28 @@ c
 
       !particle sample 2
       if (part%pidx == 2 .and. part%procidx == 0) then
-      write(*,'(a6,4e15.6)') 'xp1:  ',time,part%xp(1:3)
-      write(*,'(a6,4e15.6)') 'vp1:  ',time,part%vp(1:3)
-      write(*,'(a6,4e15.6)') 'uf1:  ',time,part%uf(1:3)
-      write(*,'(a6,2e15.6)') 'Tp1:  ',time,part%Tp
-      write(*,'(a6,2e15.6)') 'Tf1:  ',time,part%Tf
-      write(*,'(a6,2e15.6)') 'rad1: ',time,part%radius 
-      write(*,'(a6,2e15.6)') 'qinf1:',time,part%qinf 
-      write(*,'(a6,2e15.6)') 'qstr1:',time,part%qstar 
-      write(*,'(a6,e15.6,i)') 'mult1:',time,part%mult
+      write(*,'(a6,4e15.6)') 'xp2:  ',time,part%xp(1:3)
+      write(*,'(a6,4e15.6)') 'vp2:  ',time,part%vp(1:3)
+      write(*,'(a6,4e15.6)') 'uf2:  ',time,part%uf(1:3)
+      write(*,'(a6,2e15.6)') 'Tp2:  ',time,part%Tp
+      write(*,'(a6,2e15.6)') 'Tf2:  ',time,part%Tf
+      write(*,'(a6,2e15.6)') 'rad2: ',time,part%radius 
+      write(*,'(a6,2e15.6)') 'qinf2:',time,part%qinf 
+      write(*,'(a6,2e15.6)') 'qstr2:',time,part%qstar 
+      write(*,'(a6,e15.6,i)') 'mult2:',time,part%mult
       end if
 
       !particle sample 3
       if (part%pidx == 1 .and. part%procidx == 1) then
-      write(*,'(a6,4e15.6)') 'xp1:  ',time,part%xp(1:3)
-      write(*,'(a6,4e15.6)') 'vp1:  ',time,part%vp(1:3)
-      write(*,'(a6,4e15.6)') 'uf1:  ',time,part%uf(1:3)
-      write(*,'(a6,2e15.6)') 'Tp1:  ',time,part%Tp
-      write(*,'(a6,2e15.6)') 'Tf1:  ',time,part%Tf
-      write(*,'(a6,2e15.6)') 'rad1: ',time,part%radius 
-      write(*,'(a6,2e15.6)') 'qinf1:',time,part%qinf 
-      write(*,'(a6,2e15.6)') 'qstr1:',time,part%qstar 
-      write(*,'(a6,e15.6,i)') 'mult1:',time,part%mult
+      write(*,'(a6,4e15.6)') 'xp3:  ',time,part%xp(1:3)
+      write(*,'(a6,4e15.6)') 'vp3:  ',time,part%vp(1:3)
+      write(*,'(a6,4e15.6)') 'uf3:  ',time,part%uf(1:3)
+      write(*,'(a6,2e15.6)') 'Tp3:  ',time,part%Tp
+      write(*,'(a6,2e15.6)') 'Tf3:  ',time,part%Tf
+      write(*,'(a6,2e15.6)') 'rad3: ',time,part%radius 
+      write(*,'(a6,2e15.6)') 'qinf3:',time,part%qinf 
+      write(*,'(a6,2e15.6)') 'qstr3:',time,part%qstar 
+      write(*,'(a6,e15.6,i)') 'mult3:',time,part%mult
       end if
       part => part%next
 

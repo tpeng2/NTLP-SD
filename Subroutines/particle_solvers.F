@@ -382,10 +382,13 @@
 
 
       ! --- Record the flag used in params.f90
-      icpl_in = icouple
-      iTcpl_in = iTcouple
-      iHcpl_in = iHcouple
-      icls_in = icoalesce
+      ! --- only used when time is zero
+      if (it.eq.0) then
+          icpl_in = icouple
+          iTcpl_in = iTcouple
+          iHcpl_in = iHcouple
+          icls_in = icoalesce
+      end if
       ! --- Release coupling and coalecse conditions if needed
       ! --- After a certain time steps, do whatever is assigned in
       ! --- params.file
@@ -733,6 +736,8 @@
       do while (associated(part))
       numpart = numpart + 1
       myradavg = myradavg + part%radius
+      if(isnan(part%radius))write(*,*)'NaN radius: proc,pid',
+     +part%procidx,part%pidx
       if (part%radius .gt. myradmax) myradmax = part%radius
       if (part%radius .lt. myradmin) myradmin = part%radius
       if (part%Tp .gt. mytempmax) mytempmax = part%Tp
@@ -746,8 +751,6 @@
       !Compute total number of particles
       call mpi_allreduce(numpart,tnumpart,1,mpi_integer,mpi_sum,
      +                   mpi_comm_world,ierr)
-
-
 
       call mpi_allreduce(denum,tdenum,1,mpi_integer,mpi_sum,
      +                   mpi_comm_world,ierr)
@@ -780,16 +783,11 @@
       call mpi_allreduce(numimpos,tnumimpos,1,mpi_integer,mpi_sum,
      +    mpi_comm_world,ierr)
 
-      Rep_avg = tmpbuf_rec(1)
+      Rep_avg = tmpbuf_rec(1)/tnumpart
       lwc = tmpbuf(2)
-      phiw = tmpbuf_rec(3)
-      phiv = tmpbuf_rec(4)
-      radavg = tmpbuf_rec(5)
-
-      phiw = phiw/xl/yl/zl/rhoa
-      phiv = phiv/xl/yl/zl
-      Rep_avg = Rep_avg/tnumpart
-      radavg = radavg/tnumpart
+      phiw = tmpbuf_rec(3)/xl/yl/zl/rhoa
+      phiv = tmpbuf_rec(4)/xl/yl/zl
+      radavg = tmpbuf_rec(5)/tnumpart
       tavgres = tavgres/tnum_destroy
 
       !Min and max radius
