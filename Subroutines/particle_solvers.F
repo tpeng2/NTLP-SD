@@ -736,8 +736,10 @@
       do while (associated(part))
       numpart = numpart + 1
       myradavg = myradavg + part%radius
-      if(isnan(part%radius))write(*,*)'NaN radius: proc,pid',
+      if(isnan(myradavg).and.numpart<10) then
+          write(*,*)'NaN radius: proc,pid (first 10 numpart)',
      +part%procidx,part%pidx
+      end if
       if (part%radius .gt. myradmax) myradmax = part%radius
       if (part%radius .lt. myradmin) myradmin = part%radius
       if (part%Tp .gt. mytempmax) mytempmax = part%Tp
@@ -900,13 +902,7 @@
       part%m_s = Sal/1000.0*4.0/3.0*pi*radius_init**3*rhow
       
       end subroutine create_particle
-      function dFdr_uniform(r)
-      implicit none
-      real :: r,dFdr_uniform 
 
-      dFdr_uniform = 0.5e-6
-
-      end function dFdr_uniform
       subroutine particle_bcs_nonperiodic
       use particles
       use pars
@@ -931,6 +927,7 @@
       bot = zw1
 
       if (part%xp(3) .GT. top) then
+         !if particle go beyond the top (z-direction)
          part%xp(3) = top - (part%xp(3)-top)
          part%vp(3) = -part%vp(3)
          part => part%next
@@ -938,9 +935,11 @@
          !part%xp(3) = bot + (bot-part%xp(3))
          !part%vp(3) = -part%vp(3)
          !part => part%next
+        ! record past particle information
         idx_tmp=part%pidx
         procidx_tmp=part%procidx 
         tmp_rpinit=part%m_s/(Sal/1000.0*4.0/3.0*pi*rhow)**(1/3)
+        ! destroy particles
         call destroy_particle
         tmp_part => part !store the location of current(next) particle         
   
@@ -950,14 +949,17 @@
         !Inject the particles upwards: 
         !get the initial vertical velocity: 
         if (ivpran == 1) then 
-        vinj = ran2(iseed)*Vpmax 
-        else if (ivpran==0) then 
-        vinj = Vpmax 
+                vinj = ran2(iseed)*Vpmax 
+          else if (ivpran==0) then 
+                vinj = Vpmax 
         end if 
         zv = radius_init !dummy variable, will be replaced by random rp 
         !10/1/2018 Tianze 
         call create_particle((/xv,yv,zv/),(/0.0,0.0,vinj/), 
      +                     Tbot(1), idx_tmp,procidx_tmp,tmp_rpinit) 
+        ! only for test run, Tianze, 11/11/2019
+        write(*,*) 'new part gen, (x,y,z),',(/xv,yv,zv/),
+     +'rad',tmp_rpinit
 c       part%rp_init=rpinit 
 c       part%radius=part%rp_init 
               !Tianze 8/13/15 !Brian 7/29/14 Currently ignoring Tp and
@@ -971,7 +973,7 @@ c       part%radius=part%rp_init
          
         part => tmp_part !New particle points to current position
       else
-         part => part%next
+        part => part%next
       end if
 
       end do
@@ -3310,6 +3312,7 @@ c        part%qinf = 0.0 ! Brian 7/14/14
       vol_init = -X0*log(1.0-ran2(iseed))
       rad_init = (vol_init/(pi2*2.0/3.0))**(1.0/3.0)
       endif !iparsdefault ==1, Tianze 11/03/19
+
       rad_init = radius_init   !From params file -- all particles identical
       ! Note: vp_init, Tp_init, qf_init are read from params.f90,
       ! Tianze 11/03/19
@@ -4154,6 +4157,7 @@ c       Add the current event to the histogram
         histdata(ibin) = histdata(ibin) + real(mult)
 
       end subroutine add_histogram
+
       subroutine radius_histogram
       use particles
       implicit none
@@ -4168,4 +4172,12 @@ c       Add the current event to the histogram
 
       end subroutine radius_histogram
 
-     
+      function dFdr_uniform(r)
+      implicit none
+      real :: r,dFdr_uniform 
+
+      dFdr_uniform = 0.5e-6
+
+      end function dFdr_uniform
+
+
