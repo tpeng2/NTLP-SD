@@ -959,10 +959,10 @@ c       call create_particle((/xv,yv,zv/),(/0.0,0.0,vinj/),
 c    +                     Tbot(1), idx_tmp,procidx_tmp,tmp_rpinit) 
 
       call create_particle((/xv,yv,zv/),(/0.0,0.0,vinj/),
-     +         Tp_init,qf_init,rad_init,idx) 
+     +         Tp_init,qf_init,radius_init,idx_tmp) 
         ! only for test run, Tianze, 11/11/2019
         write(*,*) 'new part gen, (x,y,z),',(/xv,yv,zv/),
-     +'rad',tmp_rpinit
+     +'rad',radius_init
       !debug qinf trivial number !12/3/2019
       if(part%qinf.le.0.00001) write(*,*)'qinf error at',
      +part%procidx,'processor, for No.',part%pidx,'particles'
@@ -3353,7 +3353,7 @@ c        part%qinf = 0.0 ! Brian 7/14/14
        mwnewtmp=rhow*4.0/3.0*pi*rpnewtmp**3.0
        ! create particle with this radius 
        call create_particle((/xv,yv,zv/),(/0.01,0.0,0.0/),
-     +                   Tbot(1),qf_inif,rpnewtmp,idx)
+     +                   Tbot(1),qf_init,rpnewtmp,idx)
        ! add one more to particle number in this processor
        numpart=numpart + 1
        ! calculate remaining mass
