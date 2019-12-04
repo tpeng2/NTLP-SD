@@ -955,11 +955,18 @@
         end if 
         zv = radius_init !dummy variable, will be replaced by random rp 
         !10/1/2018 Tianze 
-        call create_particle((/xv,yv,zv/),(/0.0,0.0,vinj/), 
-     +                     Tbot(1), idx_tmp,procidx_tmp,tmp_rpinit) 
+c       call create_particle((/xv,yv,zv/),(/0.0,0.0,vinj/), 
+c    +                     Tbot(1), idx_tmp,procidx_tmp,tmp_rpinit) 
+
+      call create_particle((/xv,yv,zv/),(/0.0,0.0,vinj/),
+     +         Tp_init,qf_init,rad_init,idx) 
         ! only for test run, Tianze, 11/11/2019
         write(*,*) 'new part gen, (x,y,z),',(/xv,yv,zv/),
      +'rad',tmp_rpinit
+      !debug qinf trivial number !12/3/2019
+      if(part%qinf.le.0.00001) write(*,*)'qinf error at',
+     +part%procidx,'processor, for No.',part%pidx,'particles'
+      !debug finished
 c       part%rp_init=rpinit 
 c       part%radius=part%rp_init 
               !Tianze 8/13/15 !Brian 7/29/14 Currently ignoring Tp and
@@ -3346,7 +3353,7 @@ c        part%qinf = 0.0 ! Brian 7/14/14
        mwnewtmp=rhow*4.0/3.0*pi*rpnewtmp**3.0
        ! create particle with this radius 
        call create_particle((/xv,yv,zv/),(/0.01,0.0,0.0/),
-     +                   Tbot(1),idx,myid,rpnewtmp)
+     +                   Tbot(1),qf_inif,rpnewtmp,idx)
        ! add one more to particle number in this processor
        numpart=numpart + 1
        ! calculate remaining mass
@@ -3784,7 +3791,7 @@ c        part%qinf = 0.0 ! Brian 7/14/14
       Tpsqrsum_t(kpt,jpt,ipt) = Tpsqrsum_t(kpt,jpt,ipt) + part%Tp**2
 
       Tfsum_t(kpt,jpt,ipt) = Tfsum_t(kpt,jpt,ipt) + part%Tf
-
+      
       qfsum_t(kpt,jpt,ipt) = qfsum_t(kpt,jpt,ipt) + part%qinf
 
       wpTpsum_t(kpt,jpt,ipt) = wpTpsum_t(kpt,jpt,ipt) + 
