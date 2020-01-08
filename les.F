@@ -7928,16 +7928,16 @@ c
       wt_le  = wtle(iloc,1)
       krec = krec + 1
       mid = nnz/4
-      write(nhis1,6000) time,dt,utau,ziavg,amonin,holtop,
-     +         (tsfcc(1)-t_ref),uwsfc,vwsfc,divgmax, wt_min, wt_le,
-     +         ucfl, vcfl, wcfl, wtsfc(1),
-     +         ups(mid),vps(mid),wps(mid),tps(mid,1),
-     +         uwle(mid),uwsb(mid),uw_tot(mid),
-     +         vwle(mid),vwsb(mid),vw_tot(mid),
-     +         wtle(mid,1),wtsb(mid,1),wt_tot(mid,1),
-     +         englez(mid),eavg(mid), wabs,
-     +         lwc,
-     +         Rep_avg,radavg,radmin,radmax
+      write(nhis1,6000) time,dt,utau,ziavg,amonin,holtop, ! 1-6
+     +         (tsfcc(1)-t_ref),uwsfc,vwsfc,divgmax, wt_min, wt_le,!12
+     +         ucfl, vcfl, wcfl, wtsfc(1), !13-16
+     +         ups(mid),vps(mid),wps(mid),tps(mid,1), !17-20
+     +         uwle(mid),uwsb(mid),uw_tot(mid),       !21-23
+     +         vwle(mid),vwsb(mid),vw_tot(mid),       !24-26
+     +         wtle(mid,1),wtsb(mid,1),wt_tot(mid,1), !27-29
+     +         englez(mid),eavg(mid), wabs,           !30-32
+     +         lwc,                                   !33
+     +         Rep_avg,radavg,radmin,radmax           !34-37
 
  6000 format(37e17.8)
 c
