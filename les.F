@@ -11355,6 +11355,7 @@ c
       dFdr_uniform = 0.5e-6
 
       end function dFdr_uniform
+
       subroutine particle_bcs_nonperiodic
       use particles
       use pars
@@ -11383,6 +11384,8 @@ c
          !part%vp(3) = -part%vp(3)
          !part => part%next
          call destroy_particle
+         write(*,*) "particle removed at proc#:",part%procidx,"pid#:",
+     +part%pidx
       else
          part => part%next
       end if

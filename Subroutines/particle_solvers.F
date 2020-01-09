@@ -960,17 +960,19 @@ c    +                     Tbot(1), idx_tmp,procidx_tmp,tmp_rpinit)
 
       call create_particle((/xv,yv,zv/),(/0.0,0.0,vinj/),
      +         Tp_init,qf_init,radius_init,idx_tmp) 
-        ! only for test run, Tianze, 11/11/2019
-        write(*,*) 'new part gen, (x,y,z),',(/xv,yv,zv/),
-     +'rad',radius_init
+      
+      ! only for test run, Tianze, 11/11/2019
+c       write(*,*) 'new part gen, (x,y,z),',(/xv,yv,zv/),
+c    +'rad',radius_init
       !debug qinf trivial number !12/3/2019
-      if(part%qinf.le.0.00001) write(*,*)'qinf error at',
-     +part%procidx,'processor, for No.',part%pidx,'particles'
+c     if(part%qinf.le.0.00001) write(*,*)'qinf error at',
+c    +part%procidx,'processor, for No.',part%pidx,'particles'
       !debug finished
 c       part%rp_init=rpinit 
 c       part%radius=part%rp_init 
               !Tianze 8/13/15 !Brian 7/29/14 Currently ignoring Tp and
               !qinfp 
+
 !       ! Get particle initial radius now
         num_reintro = num_reintro +1  
         !after creating new particle to the beginning, the pointer
