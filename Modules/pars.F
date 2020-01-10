@@ -646,8 +646,10 @@ c
       call get_dt
  9000 continue
       call set_sav(it,iti)
-      if (myid==0) then
+      if (myid==0 .and. it==0) then
       write(*,*) 'Starting time loop'
+      end if
+      if (myid==0) then
       write(*,*) 'it,time = ',it,time
       end if
       if (it == 1) numpart = 0
