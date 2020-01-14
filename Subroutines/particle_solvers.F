@@ -911,7 +911,7 @@
       integer:: ierr
       integer::itlocal,idx_tmp,procidx_tmp,tmp_reintro
       real :: top,bot
-      real :: xv,yv,zv,ran2,vinj,tmp_rpinit
+      real :: xv,yv,zv,ran2,vinj1,vinj2,vinj3,tmp_rpinit
       type(particle),pointer :: tmp_part
       !Assumes domain goes from [0,xl),[0,yl),[0,zl]
       !Also maintain the number of particles on each proc
@@ -941,6 +941,11 @@
         tmp_rpinit=part%m_s/(Sal/1000.0*4.0/3.0*pi*rhow)**(1/3)
         ! destroy particles
         call destroy_particle
+        ! test only 1/10/20 Tianze
+c       if (myid.le.1) then
+c       write(*,*) 'Particle is removed at proc#',procidx_tmp,', #',
+c    +idx_tmp
+c       end if
         tmp_part => part !store the location of current(next) particle         
   
         xv = ran2(iseed)*(xmax-xmin) + xmin 
@@ -949,16 +954,18 @@
         !Inject the particles upwards: 
         !get the initial vertical velocity: 
         if (ivpran == 1) then 
-                vinj = ran2(iseed)*Vpmax 
+                vinj1 = ran2(iseed) 
+                vinj2 = ran2(iseed) 
+                vinj3 = ran2(iseed)*Vpmax 
           else if (ivpran==0) then 
-                vinj = Vpmax 
+                vinj3 = Vpmax 
         end if 
         zv = radius_init !dummy variable, will be replaced by random rp 
         !10/1/2018 Tianze 
 c       call create_particle((/xv,yv,zv/),(/0.0,0.0,vinj/), 
 c    +                     Tbot(1), idx_tmp,procidx_tmp,tmp_rpinit) 
 
-      call create_particle((/xv,yv,zv/),(/0.0,0.0,vinj/),
+      call create_particle((/xv,yv,zv/),(/vinj1,vinj2,vinj3/),
      +         Tp_init,qf_init,radius_init,idx_tmp) 
       
       ! only for test run, Tianze, 11/11/2019
