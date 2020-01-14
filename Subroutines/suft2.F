@@ -36,7 +36,7 @@ c
 c
 c ----------------- first guess for utau
 c
-      utau = .001
+      utau = .005
 c
       t10xy(1) = -qstar(1)/utau*zody*vk74in
       tsfcc(1) = u_level1(ix,iy,3) - t10xy(1)
