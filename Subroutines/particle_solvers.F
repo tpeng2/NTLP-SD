@@ -403,7 +403,7 @@
          iHcouple=iHcpl_in
       end if
       
-      if (it.lt.itclsbegin) then
+      if (icls_in.eq.1.and.it.lt.itclsbegin) then
          icoalesce=0
       else 
          icoalesce=icls_in
