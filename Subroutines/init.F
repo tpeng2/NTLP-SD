@@ -434,23 +434,33 @@ c        ug(iz)   = ugcont*(zz(iz)/zl)
 c
       izi = (50*nnz)/100
       zi  = z(izi)
-      if(myid==0) write(*,*)'The inversion layer initalized at ',zi,' m'
+      if(myid==0) write(*,*)'z(maxnz/2)= ',zi,' m'
 c
-      z_lower = zi - 50.0
-      t_lower = 300.0
-      z_upper = zi + 50.0
-      t_upper = 308.0
+      !in ABL
+c     !--- assume surface layer at 4/zi (ABL: zi is inversion layer) 
+      hsurf_init=zi/6
+      if(myid==0.and.isurfUlog==1) then
+        write(*,*)'Initial log-U profile reaches to',hsurf_init
+      end if
+      ! for ABL case, zi is the inversion layer
+      z_lower = zi - hsurf_init
+      ! find the temperatue range for the inversion layer is
+      t_lower = (Tbot(1)+Ttop(1))/2.0
+      z_upper = zi + hsurf_init
+      t_upper = Ttop(1)
       slope   = (t_upper - t_lower)/(z_upper - z_lower)
+      if(myid==0)write(*,*)'T slope from',z_lower,'to',z_upper,'=',slope
 c
-c     !--- assume surface layer at 50m 
-      hsurf_init=50
        do iy=iys,iye
          do ix=1,nnx
            do iz=izs,ize
             !--- initialize (u,v,w,e) fileds 
             u(ix,iy,iz) = ugcont-ugal
 c           u(ix,iy,iz) = ug(iz) - ugal
-            if (z(iz).le.hsurf_init.and.zw1/zo.gt.1) then
+      !if the log-U profile is turned on, and z is below the
+      !presumptuous surface layer, using a simple log profile
+      !!Tianze!01/20
+            if(isurfUlog==1.and.z(iz).le.hsurf_init.and.zw1/zo.gt.1)then
                u(ix,iy,iz)=u(ix,iy,iz)/log(hsurf_init/zo)*log(z(iz)/zo)
             endif
             v(ix,iy,iz) = vgcont
@@ -459,7 +469,7 @@ c           u(ix,iy,iz) = ug(iz) - ugal
             !--- initialize Temp fileds with inversion layer specified 
             if(z(iz) .le. z_lower) then
               t(ix,iy,1,iz) = t_lower
-              ! Add "bubble" to test cloud model
+              ! Add "bubble" to test cloud model 
               if (itempfld==1) then
                 t(ix,iy,1,iz) = t(ix,iy,1,iz) + 0.1*
      +          exp( -( (dx*(ix-1)-500.0)/200.0 )**2 

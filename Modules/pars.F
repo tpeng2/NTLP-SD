@@ -698,6 +698,11 @@ c
       if (it == 1) numpart = numpart + 1
       end do
       if(myid==0) then
+
+      write(*,'(a15,3e15.6)')'avg U(zl/2),U(zl):',
+     +time,uxym(maxnz/2),uxym(maxnz)
+      write(*,'(a15,3e15.6)')'avg T(zl/2),T(zl):',
+     +time,txym(maxnz/2,1),txym(maxnz,1)
       write(*,'(a15,e15.6,i12)')'tnumpart:      ',time,tnumpart
       write(*,'(a15,e15.6,i12)')'tnum_des:      ',time,tnum_destroy
       write(*,'(a15,3e15.6)')   'radmin,radmax: ',time,radmin,radmax
@@ -840,8 +845,8 @@ c
          call particle_update_rk3(it,istage) 
 
          t_f = mpi_wtime()
-         call mpi_barrier(mpi_comm_world,ierr)
-         if (myid==5) write(*,*) 'time part: ',t_f-t_s
+c        call mpi_barrier(mpi_comm_world,ierr)
+c        if (myid==5) write(*,*) 'time part: ',t_f-t_s
          end if
 
 
